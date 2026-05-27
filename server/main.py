@@ -2,37 +2,103 @@ from fastapi import FastAPI
 import subprocess
 import os
 import sys
+import json
+
+from fl_core.orchestrator import Orchestrator
 
 app = FastAPI()
 
-FL_PROCESS = None
+SERVER_PROCESS=None
+CLIENTS=[]
 
 
 @app.post("/start_fl")
 def start_fl():
-    global FL_PROCESS
 
-    if FL_PROCESS is None:
+    global SERVER_PROCESS
+    global CLIENTS
 
-        FL_PROCESS = subprocess.Popen(
-            [sys.executable, "server/fl_server.py"],
-            cwd=os.getcwd()
+    # -------- ORCHESTRATOR --------
+
+    orch=Orchestrator()
+
+    orch.load_dataset()
+
+    orch.split_clients(
+        num_clients=3
+    )
+
+    # -------- SERVER CONFIG --------
+
+    config={
+
+        "model":
+        "models/random_forest_model_tcga+emtab500.pkl",
+
+        "k":10,
+
+        "clients":3
+
+    }
+
+    with open(
+        "server/config.json",
+        "w"
+    ) as f:
+
+        json.dump(
+            config,
+            f,
+            indent=4
         )
 
-        return {"status": "FL started"}
+    # -------- START SERVER --------
 
-    return {"status": "already running"}
+    SERVER_PROCESS= subprocess.Popen(
+
+        [sys.executable,
+         "server/fl_server.py"]
+
+    )
+
+    # -------- START CLIENTS --------
+
+    for i in range(1,4):
+
+        p=subprocess.Popen(
+
+            [sys.executable,
+             f"clients/client{i}.py"]
+
+        )
+
+        CLIENTS.append(p)
+
+    return{
+
+        "status":
+        "FL started"
+    }
 
 
 @app.post("/stop_fl")
 def stop_fl():
-    global FL_PROCESS
 
-    if FL_PROCESS:
+    global SERVER_PROCESS
+    global CLIENTS
 
-        FL_PROCESS.terminate()
-        FL_PROCESS = None
+    if SERVER_PROCESS:
 
-        return {"status": "FL stopped"}
+        SERVER_PROCESS.kill()
 
-    return {"status": "not running"}
+    for c in CLIENTS:
+
+        c.kill()
+
+    CLIENTS=[]
+
+    return{
+
+        "status":
+        "stopped"
+    }

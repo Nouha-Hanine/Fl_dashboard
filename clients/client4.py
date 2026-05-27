@@ -3,38 +3,70 @@ import pickle
 import numpy as np
 import pandas as pd
 import grpc
-import json
-import requests
 
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
-    fbeta_score, accuracy_score, recall_score,
-    precision_score, roc_auc_score, confusion_matrix, roc_curve
+    fbeta_score,
+    accuracy_score,
+    recall_score,
+    precision_score,
+    roc_auc_score,
+    confusion_matrix
 )
 
-from sklearn.ensemble import RandomForestClassifier
+# =========================
+# CONFIG
+# =========================
+CLIENT_ID = 4
+THRESHOLD = 0.5
 
 
+# =========================
+# LOAD DATA FROM ORCHESTRATOR
+# =========================
+def get_data(client_id):
+
+    path = f"orchestrator/client_data/client{client_id}.csv"
+
+    print(f"[CLIENT {client_id}] Loading data from {path}")
+
+    df = pd.read_csv(path, sep=";")  # ✅ IMPORTANT FIX
+
+    target = "Progression_Status"
+
+    X = pd.get_dummies(df.drop(columns=[target]))
+    y = df[target]
+
+    return train_test_split(
+        X,
+        y,
+        test_size=0.2,
+        random_state=42,
+        stratify=y
+    )
+
+
+# =========================
+# CLIENT FL
+# =========================
 class FlowerClient(fl.client.NumPyClient):
 
-    def __init__(self, client_id):
+    def __init__(self, X_train, X_test, y_train, y_test):
 
-        self.client_id = client_id
-        self.X_train_local = None
-        self.X_test_local = None
-        self.y_train = None
-        self.y_test = None
-
-        self.X_external = None
-        self.y_external = None
+        self.X_train = X_train
+        self.X_test = X_test
+        self.y_train = y_train
+        self.y_test = y_test
 
         self.tau = 0.9
         self.alpha = 0.7
-        self.threshold = 0.5
+        self.threshold = THRESHOLD
 
     # ========================= FIT =========================
     def fit(self, parameters, config):
 
-        print("\n--- FIT PHASE ---")
+        print("\n--- [CLIENT 1] FIT ---")
 
         data = pickle.loads(parameters[0])
 
@@ -42,40 +74,31 @@ class FlowerClient(fl.client.NumPyClient):
         K = data["K"]
         hyperparams = data["params"]
 
-        dataset = data.get("data", None)
-
-        # -------- receive dataset from dashboard --------
-        if dataset:
-
-            self.X_train_local = dataset["X_train"]
-            self.X_test_local = dataset["X_test"]
-            self.y_train = dataset["y_train"]
-            self.y_test = dataset["y_test"]
-
-            self.X_external = dataset.get("X_external", None)
-            self.y_external = dataset.get("y_external", None)
-
-            print("[CLIENT] Dataset received from dashboard.")
-
-        # -------- align features --------
-        X_aligned = self.X_train_local.reindex(
+        # align features
+        X_aligned = self.X_train.reindex(
             columns=gm_model.feature_names_in_,
             fill_value=0
         )
 
+        # prediction global model
         proba = gm_model.predict_proba(X_aligned)[:, 1]
         y_pred = (proba > self.threshold).astype(int)
 
         f1 = fbeta_score(self.y_train, y_pred, beta=1)
 
+        print(f"[CLIENT 1] F1 global model = {f1:.4f}")
+
+        # adaptive threshold
         self.tau = self.alpha * self.tau + (1 - self.alpha) * f1
 
         bij = bool(f1 >= (self.tau - 0.03))
 
         tij_bytes = pickle.dumps([])
 
-        # -------- correction trees --------
+        # correction trees if bad performance
         if not bij:
+
+            print("[CLIENT 1] Training correction trees...")
 
             weights = np.where(
                 gm_model.predict(X_aligned) != self.y_train,
@@ -98,7 +121,12 @@ class FlowerClient(fl.client.NumPyClient):
 
             tij_bytes = pickle.dumps(trees)
 
-        return [], len(self.X_train_local), {
+            print(f"[CLIENT 1] Sending {len(trees)} trees")
+
+        else:
+            print("[CLIENT 1] Model good, no update")
+
+        return [], len(self.X_train), {
             "bij": bij,
             "tij": tij_bytes
         }
@@ -106,13 +134,12 @@ class FlowerClient(fl.client.NumPyClient):
     # ========================= EVALUATE =========================
     def evaluate(self, parameters, config):
 
-        print("\n--- EVALUATION PHASE ---")
+        print("\n--- [CLIENT 1] EVALUATE ---")
 
         data = pickle.loads(parameters[0])
         model = data["model"]
 
-        # ================= LOCAL TEST =================
-        X_test = self.X_test_local.reindex(
+        X_test = self.X_test.reindex(
             columns=model.feature_names_in_,
             fill_value=0
         )
@@ -127,59 +154,27 @@ class FlowerClient(fl.client.NumPyClient):
         tn, fp, fn, tp = confusion_matrix(self.y_test, y_pred).ravel()
         spec = tn / (tn + fp + 1e-8)
 
-        # ================= CROSS CLIENT =================
-        cross_metrics = {}
+        print("\n===== CLIENT 1 METRICS =====")
+        print(f"Accuracy  : {acc:.4f}")
+        print(f"F1-score  : {f1:.4f}")
+        print(f"AUC       : {auc:.4f}")
+        print(f"Specificity: {spec:.4f}")
 
-        if self.X_external is not None:
+        return float(1 - f1), len(self.X_test), {}
 
-            X_ext = self.X_external.reindex(
-                columns=model.feature_names_in_,
-                fill_value=0
-            )
 
-            y_ext_proba = model.predict_proba(X_ext)[:, 1]
-            y_ext_pred = (y_ext_proba > self.threshold).astype(int)
+# =========================
+# MAIN
+# =========================
+if __name__ == "__main__":
 
-            cross_metrics = {
-                "acc": accuracy_score(self.y_external, y_ext_pred),
-                "f1": fbeta_score(self.y_external, y_ext_pred, beta=1),
-                "precision": precision_score(self.y_external, y_ext_pred),
-                "recall": recall_score(self.y_external, y_ext_pred),
-                "auc": roc_auc_score(self.y_external, y_ext_proba)
-            }
+    X_train, X_test, y_train, y_test = get_data(CLIENT_ID)
 
-        # ================= GRAPHS DATA =================
-        fpr, tpr, _ = roc_curve(self.y_test, y_proba)
+    print("[CLIENT 1] Connecting to server...")
 
-        confusion = [[tn, fp], [fn, tp]]
-
-        payload_to_dashboard = {
-            "client_id": self.client_id,
-            "local_metrics": {
-                "acc": acc,
-                "f1": f1,
-                "auc": auc,
-                "specificity": spec
-            },
-            "cross_metrics": cross_metrics,
-            "roc_curve": {
-                "fpr": fpr.tolist(),
-                "tpr": tpr.tolist()
-            },
-            "confusion_matrix": confusion
-        }
-
-        # ================= SEND TO DASHBOARD =================
-        try:
-            requests.post(
-                "http://127.0.0.1:5000/update-dashboard",
-                data=pickle.dumps(payload_to_dashboard),
-                headers={"Content-Type": "application/octet-stream"}
-            )
-
-            print("[CLIENT] Metrics sent to dashboard.")
-
-        except Exception as e:
-            print("Dashboard send error:", e)
-
-        return float(1 - f1), len(self.X_test_local), {}
+    fl.client.start_client(
+        server_address="127.0.0.1:8080",
+        client=FlowerClient(
+            X_train, X_test, y_train, y_test
+        ).to_client()
+    )
