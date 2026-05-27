@@ -1,75 +1,152 @@
 import streamlit as st
-import requests
-import time
 import pandas as pd
-import matplotlib.pyplot as plt
+import requests
+import os
+import json
 
-st.set_page_config(page_title="FL Dashboard", layout="wide")
+st.set_page_config(
+    page_title="FL Dashboard",
+    layout="wide"
+)
 
-st.title("🔥 Federated Learning Dashboard")
+st.title("Federated Learning Dashboard")
 
-API_URL = "http://127.0.0.1:8000"
+st.sidebar.header("Configuration")
 
-# =========================
-# SIDEBAR CONTROL PANEL
-# =========================
-st.sidebar.header("⚙️ Control Panel")
+# choix nombre clients
+num_clients = st.sidebar.selectbox(
+    "Number of Clients",
+    [2,3,4,5]
+)
 
-clients = st.sidebar.selectbox("Number of Clients", [2, 3, 4, 5])
+# choix K
+k_value = st.sidebar.selectbox(
+    "K value",
+    [3,10,20]
+)
 
-if st.sidebar.button("🚀 Start FL"):
-    r = requests.post(f"{API_URL}/start_fl")
-    st.sidebar.success(r.json()["status"])
+# choix modèle
+model = st.sidebar.selectbox(
+    "Pretrained Model",
+    [
+        "random_forest_model1.pkl",
+        "random_forest_model2.pkl",
+        "random_forest_model3.pkl"
+    ]
+)
 
-if st.sidebar.button("🛑 Stop FL"):
-    r = requests.post(f"{API_URL}/stop_fl")
-    st.sidebar.warning(r.json()["status"])
+st.sidebar.write("---")
 
-# =========================
-# MAIN DASHBOARD
-# =========================
-st.subheader("📊 Training Monitor")
+# dataset
+dataset_path="data/735_Data.csv"
 
-placeholder = st.empty()
+if os.path.exists(dataset_path):
 
-# Fake data (remplacé plus tard par ton serveur)
-rounds = list(range(1, 11))
-accuracy = [0.6, 0.65, 0.7, 0.72, 0.74, 0.76, 0.78, 0.8, 0.82, 0.83]
-f1 = [0.55, 0.6, 0.63, 0.68, 0.7, 0.72, 0.75, 0.77, 0.79, 0.81]
+    df=pd.read_csv(dataset_path)
 
-df = pd.DataFrame({
-    "Round": rounds,
-    "Accuracy": accuracy,
-    "F1-score": f1
-})
+    st.success(
+        f"Dataset loaded : {len(df)} patients"
+    )
 
-placeholder.dataframe(df)
+    st.write(df.head())
 
-# =========================
-# GRAPHS
-# =========================
-col1, col2 = st.columns(2)
+else:
+    st.error("Dataset missing")
+
+st.write("---")
+
+col1,col2=st.columns(2)
 
 with col1:
-    st.subheader("📈 Accuracy")
-    fig, ax = plt.subplots()
-    ax.plot(rounds, accuracy)
-    ax.set_xlabel("Round")
-    ax.set_ylabel("Accuracy")
-    st.pyplot(fig)
+
+    if st.button("START FL"):
+
+        response=requests.post(
+            "http://127.0.0.1:8000/start_fl"
+        )
+
+        st.success(response.json())
 
 with col2:
-    st.subheader("📈 F1 Score")
-    fig, ax = plt.subplots()
-    ax.plot(rounds, f1)
-    ax.set_xlabel("Round")
-    ax.set_ylabel("F1")
-    st.pyplot(fig)
 
-# =========================
-# STATUS PANEL
-# =========================
-st.subheader("📡 System Status")
+    if st.button("STOP FL"):
 
-st.info("Dashboard connected to FL system")
-st.write("Clients selected:", clients)
+        response=requests.post(
+            "http://127.0.0.1:8000/stop_fl"
+        )
+
+        st.warning(response.json())
+
+st.write("---")
+
+st.header("Global Metrics")
+
+if os.path.exists("results/metrics.json"):
+
+    with open("results/metrics.json") as f:
+
+        data=json.load(f)
+
+    c1,c2,c3,c4,c5=st.columns(5)
+
+    c1.metric(
+        "Accuracy",
+        round(data["accuracy"],3)
+    )
+
+    c2.metric(
+        "F1",
+        round(data["f1"],3)
+    )
+
+    c3.metric(
+        "Precision",
+        round(data["precision"],3)
+    )
+
+    c4.metric(
+        "Recall",
+        round(data["recall"],3)
+    )
+
+    c5.metric(
+        "AUC",
+        round(data["auc"],3)
+    )
+
+else:
+
+    st.info(
+        "No metrics yet"
+    )
+
+
+st.write("---")
+
+st.header("Client Results")
+
+for i in range(1,num_clients+1):
+
+    st.subheader(
+        f"Client {i}"
+    )
+
+    result_folder=f"results/client{i}"
+
+    if os.path.exists(result_folder):
+
+        imgs=os.listdir(result_folder)
+
+        for img in imgs:
+
+            if img.endswith(".png"):
+
+                st.image(
+                    f"{result_folder}/{img}"
+                )
+
+    else:
+
+        st.write(
+            "No results yet"
+        )
