@@ -250,7 +250,7 @@ dataset_path = "data/735_Data.csv"
 
 if os.path.exists(dataset_path):
 
-    df = pd.read_csv(dataset_path)
+    df = pd.read_csv(dataset_path, sep=";")
 
     c1, c2, c3 = st.columns(3)
 
@@ -292,13 +292,15 @@ with control4:
                     "k_value": k_value,
                     "model_choice": model_choice,
                     "split_strategy": split_choice,
-                    "dataset": dataset_choice,
-                    "client_split_strategy": client_split_choice,
+                    
                         
                 }
             )
 
-            st.success("Federated Learning started")
+            if response.status_code == 200:
+                st.success("Federated Learning started")
+            else:
+                st.error(response.text)
 
         except:
             st.error("Cannot start FL")

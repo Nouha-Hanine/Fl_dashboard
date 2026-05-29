@@ -4,6 +4,7 @@ import subprocess
 import os
 import sys
 import json
+import shutil
 
 from fl_core.orchestrator import Orchestrator
 
@@ -20,8 +21,8 @@ class FLConfig(BaseModel):
     num_clients: int
     k_value: int
     model_choice: str
-    dataset_path: str   # 👈 important (flexible)
-    split_strategy: str # kept only for logging/UI (optionnel)
+    dataset: str | None = None
+    client_split_strategy: str | None = None
 
 
 # =========================================
@@ -44,23 +45,35 @@ def start_fl(config: FLConfig):
     CLIENTS = []
 
     # =====================================
-    # ORCHESTRATOR (CLIENT DATA ONLY)
+    # COPY READY DATASETS TO CLIENTS
     # =====================================
-    orch = Orchestrator()
+    os.makedirs("orchestrator/client_data", exist_ok=True)
 
-    orch.load_dataset(config.dataset_path)
+    for i in range(1, config.num_clients + 1):
 
-    orch.split_clients(
-        num_clients=config.num_clients
-    )
+        source = f"scripts/script{i}.csv"
+        destination = f"orchestrator/client_data/client{i}.csv"
+
+        shutil.copy(source, destination)
+
+        print(f"[APP] client{i}.csv ready")
 
     # =====================================
-    # SERVER CONFIG (IMPORTANT)
+    # ORCHESTRATOR (OPTIONNEL)
+    # =====================================
+    # orch = Orchestrator()
+    # if config.dataset:
+    #     orch.load_dataset(config.dataset)
+    #     orch.split_clients(num_clients=config.num_clients)
+
+    # =====================================
+    # SERVER CONFIG
     # =====================================
     server_config = {
-        "model": f"models/{config.model_choice}",  # pretrained model
+        "model": f"models/{config.model_choice}",
         "k": config.k_value,
-        "clients": config.num_clients
+        "clients": config.num_clients,
+        "dataset": config.dataset   # ✅ FIX ICI (au lieu de dataset_path)
     }
 
     os.makedirs("server", exist_ok=True)
@@ -93,8 +106,7 @@ def start_fl(config: FLConfig):
         "status": "FL started successfully",
         "clients": config.num_clients,
         "k": config.k_value,
-        "model": config.model_choice,
-        "dataset": config.dataset_path
+        "model": config.model_choice
     }
 
 

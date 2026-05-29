@@ -1,5 +1,6 @@
 {
     "model": "models/random_forest_model_tcga+emtab500.pkl",
     "k": 10,
-    "clients": 3
+    "clients": 2,
+    "dataset": null
 }
