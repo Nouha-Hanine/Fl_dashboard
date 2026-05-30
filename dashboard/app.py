@@ -9,7 +9,7 @@ import json
 # PAGE CONFIG
 # =========================================================
 st.set_page_config(
-    page_title="FL Dashboard PRO",
+    page_title="FL Dashboard ",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -19,6 +19,12 @@ st.set_page_config(
 # =========================================================
 st.markdown("""
 <style>
+
+/* Force les variables globales de Streamlit à utiliser du blanc par défaut */
+:root {
+    --text-color: #ffffff !important;
+    --primary-color: #2563eb !important;
+}
 
 html, body, [class*="css"] {
     font-family: 'Segoe UI', sans-serif;
@@ -32,7 +38,7 @@ html, body, [class*="css"] {
         #111827 30%,
         #1e293b 100%
     );
-    color: white;
+    color: #ffffff !important;
 }
 
 /* Main container */
@@ -94,7 +100,10 @@ html, body, [class*="css"] {
     );
 }
 
-/* Metrics */
+/* =========================================================
+   BLOC METRICS CORRIGÉ (Rows, Columns, Accuracy, F1...) 
+   ========================================================= */
+
 [data-testid="metric-container"] {
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.08);
@@ -103,18 +112,74 @@ html, body, [class*="css"] {
     box-shadow: 0 8px 25px rgba(0,0,0,0.25);
 }
 
-/* Sidebar */
+/* Petits titres en haut des metrics (ex: Rows, Columns, Accuracy) -> Gris clair argenté */
+[data-testid="metric-container"] label, 
+[data-testid="metric-container"] [data-testid="stMetricLabel"],
+[data-testid="metric-container"] [data-testid="stMetricLabel"] > div,
+[data-testid="metric-container"] [data-testid="stMetricLabel"] p {
+    color: #cbd5e1 !important;
+    font-weight: 500 !important;
+}
+
+/* Grands chiffres et valeurs (ex: 735, 10, 0.685) -> Blanc pur */
+[data-testid="metric-container"] [data-testid="stMetricValue"], 
+[data-testid="metric-container"] [data-testid="stMetricValue"] > div,
+[data-testid="metric-container"] [data-testid="stMetricValue"] div {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    -webkit-text-fill-color: #ffffff !important; /* Force le rendu webkit */
+}
+
+/* Titre "Server logs" -> Blanc pur */
+[data-testid="stTextArea"] label, 
+[data-testid="stTextArea"] label p,
+.stTextArea label p {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+/* =========================================================
+   BLOC SIDEBAR
+   ========================================================= */
+
 section[data-testid="stSidebar"] {
-    background: #0b1120;
+    background: #0b1120 !important;
     border-right: 1px solid rgba(255,255,255,0.08);
 }
 
-/* Selectbox */
+/* Titre "⚙️ Configuration" -> Blanc pur */
+section[data-testid="stSidebar"] h2, 
+section[data-testid="stSidebar"] h2 div,
+section[data-testid="stSidebar"] h1 {
+    color: #ffffff !important;
+    font-size: 1.6rem !important;
+    font-weight: 700 !important;
+}
+
+/* Textes au-dessus des menus déroulants -> Gris clair */
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] label p {
+    color: #cbd5e1 !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+}
+
+/* Flèches et icône de réduction de la Sidebar -> Blanc pur */
+section[data-testid="stSidebar"] svg,
+[data-testid="stSidebarCollapseButton"] svg {
+    fill: #ffffff !important;
+    color: #ffffff !important;
+}
+
+/* Selectbox (Champs de sélection) */
 .stSelectbox > div > div {
     background-color: #111827;
     color: white;
     border-radius: 12px;
 }
+.stSelectbox svg {
+    fill: #ffffff !important;
+}              
 
 /* Expander */
 .streamlit-expanderHeader {
@@ -166,7 +231,7 @@ st.markdown(
     """
     <div class="custom-card glow">
         <div class="main-title">
-            🚀 Federated Learning Dashboard PRO
+             Federated Learning Dashboard 
         </div>
 
         <div class="sub-title">
@@ -187,56 +252,54 @@ st.sidebar.markdown("# ⚙️ Configuration")
 
 num_clients = st.sidebar.selectbox(
     "👥 Number of Clients",
-    [2,3,4,5]
+    [2, 3, 4, 5]
 )
 
 k_value = st.sidebar.selectbox(
     "🌳 K Trees",
-    [3,10,20]
+    [3, 10, 20]
 )
 
 split_choice = st.sidebar.selectbox(
     "✂️ Split Dataset",
     [
-        "367 / 368",
-        "500 / 235"
+        "500 / 235",
+        "367 / 368"
     ]
 )
 
-dataset_choice = st.sidebar.selectbox(
-    "📂 Dataset For Clients",
-    [
-        "368_Data.csv",
-        "500_Data.csv",
-        "235_Data.csv"
-    ]
-)
+if split_choice == "500 / 235":
 
-script_choice = st.sidebar.selectbox(
-    "📜 Client Strategy",
-    [
-        "split1.py",
-        "split2.py",
-        "split3.py"
-    ]
-)
+    dataset_choice = st.sidebar.selectbox(
+        "📂 Dataset For Clients",
+        [
+            "500_Data.csv",
+            "235_Data.csv"
+        ]
+    )
+
+else:
+
+    dataset_choice = st.sidebar.selectbox(
+        "📂 Dataset For Clients",
+        [
+            "367_Data.csv",
+            "368_Data.csv"
+        ]
+    )
 
 model_choice = st.sidebar.selectbox(
     "🤖 Pretrained Model",
-    [ "random_forest_model_tcga+emtab235.pkl",
-      "random_forest_model_tcga+emtab367.pkl",
-      "random_forest_model_tcga+emtab500.pkl" ]
-)
-client_split_choice = st.sidebar.selectbox(
-    "🧩 Client Split Strategy",
     [
-        "client.py"
+        "random_forest_model_tcga+emtab235.pkl",
+        "random_forest_model_tcga+emtab367.pkl",
+        "random_forest_model_tcga+emtab500.pkl"
     ]
 )
 
 st.sidebar.markdown("---")
-
 st.sidebar.success("System Ready")
+
 
 # =========================================================
 # DATASET PREVIEW
@@ -254,15 +317,28 @@ if os.path.exists(dataset_path):
 
     c1, c2, c3 = st.columns(3)
 
-    c1.metric("Rows", len(df))
-    c2.metric("Columns", len(df.columns))
-    c3.metric("Clients", num_clients)
+    # --- FONCTION LOCALE POUR GENERER LE METRIC EN BLANC PUR ---
+    def custom_white_metric(col, label, value):
+        col.markdown(f"""
+            <div style="
+                background: rgba(255,255,255,0.05);
+                border: 1px solid rgba(255,255,255,0.08);
+                padding: 15px;
+                border-radius: 14px;
+                text-align: left;
+            ">
+                <div style="color: #cbd5e1; font-size: 14px; font-weight: 500; margin-bottom: 5px;">{label}</div>
+                <div style="color: #ffffff; font-size: 28px; font-weight: 700;">{value}</div>
+            </div>
+        """, unsafe_allow_html=True)
 
-    st.dataframe(
-        df.head(),
-        use_container_width=True,
-        height=250
-    )
+    # Application de la fonction sur tes 3 colonnes de Preview
+    custom_white_metric(c1, "Rows", len(df))
+    custom_white_metric(c2, "Columns", len(df.columns))
+    custom_white_metric(c3, "Clients", num_clients)
+
+    st.write("") # Petit espace visuel entre les metrics et le tableau
+    st.dataframe(df.head(), use_container_width=True)
 
 else:
     st.error("Dataset not found")
@@ -277,7 +353,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
 control4, control5 = st.columns(2)
 
 with control4:
@@ -291,9 +366,8 @@ with control4:
                     "num_clients": num_clients,
                     "k_value": k_value,
                     "model_choice": model_choice,
+                    "dataset": dataset_choice,
                     "split_strategy": split_choice,
-                    
-                        
                 }
             )
 
@@ -302,8 +376,9 @@ with control4:
             else:
                 st.error(response.text)
 
-        except:
-            st.error("Cannot start FL")
+        except Exception as e:
+            st.error(f"Cannot start FL: {e}")
+
 
 with control5:
 
@@ -316,11 +391,13 @@ with control5:
 
             st.warning("Training stopped")
 
-        except:
-            st.error("Stop failed")
+        except Exception as e:
+            st.error(f"Stop failed: {e}")
+
 
 st.write("")
 st.markdown("---")
+
 
 # =========================================================
 # GLOBAL METRICS
@@ -333,58 +410,48 @@ st.markdown(
 metrics_path = "dashboard/global_metrics.json"
 
 if os.path.exists(metrics_path):
-
     try:
-
         with open(metrics_path, "r") as f:
-
             content = f.read().strip()
 
         if content:
-
             data = json.loads(content)
 
-            m1,m2,m3,m4,m5 = st.columns(5)
+            m1, m2, m3, m4, m5 = st.columns(5)
 
-            m1.metric(
-                "Accuracy",
-                round(data.get("accuracy",0),3)
-            )
+            # --- FONCTION LOCALE POUR GENERER LE METRIC EN BLANC PUR ---
+            def custom_white_metric(col, label, value):
+                col.markdown(f"""
+                    <div style="
+                        background: rgba(255,255,255,0.05);
+                        border: 1px solid rgba(255,255,255,0.08);
+                        padding: 15px;
+                        border-radius: 14px;
+                        text-align: left;
+                    ">
+                        <div style="color: #cbd5e1; font-size: 14px; font-weight: 500; margin-bottom: 5px;">{label}</div>
+                        <div style="color: #ffffff; font-size: 28px; font-weight: 700;">{value}</div>
+                    </div>
+                """, unsafe_allow_html=True)
 
-            m2.metric(
-                "F1-score",
-                round(data.get("f1",0),3)
-            )
-
-            m3.metric(
-                "Precision",
-                round(data.get("precision",0),3)
-            )
-
-            m4.metric(
-                "Sensitivity",
-                round(data.get("sensitivity",0),3)
-            )
-
-            m5.metric(
-                "AUC",
-                round(data.get("auc",0),3)
-            )
+            # Affichage forcé en blanc pur dans chaque colonne
+            custom_white_metric(m1, "Accuracy", round(data.get("accuracy", 0), 3))
+            custom_white_metric(m2, "F1-score", round(data.get("f1", 0), 3))
+            custom_white_metric(m3, "Precision", round(data.get("precision", 0), 3))
+            custom_white_metric(m4, "Sensitivity", round(data.get("sensitivity", 0), 3))
+            custom_white_metric(m5, "AUC", round(data.get("auc", 0), 3))
 
         else:
-
             st.info("Waiting for metrics...")
 
     except Exception as e:
-
         st.error(f"Metrics Error: {e}")
-
 else:
-
     st.info("No metrics generated yet")
 
 st.write("")
 st.markdown("---")
+
 
 # =========================================================
 # SERVER LOGS
@@ -399,21 +466,21 @@ log_path = "logs/server.log"
 if os.path.exists(log_path):
 
     with open(log_path, "r", encoding="utf-8") as f:
-
         logs = f.read()
 
     st.text_area(
-        "",
-        logs,
+        label="Server logs",
+        value=logs,
         height=300
     )
 
 else:
-
     st.info("No logs yet")
+
 
 st.write("")
 st.markdown("---")
+
 
 # =========================================================
 # CLIENT RESULTS
@@ -425,10 +492,7 @@ st.markdown(
 
 for i in range(1, num_clients + 1):
 
-    with st.expander(
-        f"📊 Client {i} Results",
-        expanded=False
-    ):
+    with st.expander(f"📊 Client {i} Results"):
 
         result_folder = f"results/client{i}"
 
@@ -436,13 +500,9 @@ for i in range(1, num_clients + 1):
 
             files = os.listdir(result_folder)
 
-            images = [
-                f for f in files
-                if f.endswith(".png")
-            ]
+            images = [f for f in files if f.endswith(".png")]
 
             if len(images) == 0:
-
                 st.info("No graphs generated yet")
 
             else:
@@ -458,11 +518,12 @@ for i in range(1, num_clients + 1):
                     )
 
         else:
-
             st.warning("No results folder found")
+
 
 st.write("")
 st.markdown("---")
+
 
 # =========================================================
 # FOOTER
@@ -477,4 +538,3 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-

@@ -1,131 +1,160 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import subprocess
 import os
 import sys
 import json
-import shutil
-
-from fl_core.orchestrator import Orchestrator
+import threading
 
 app = FastAPI()
 
 SERVER_PROCESS = None
 CLIENTS = []
+# Lock to prevent concurrent overlapping training sessions
+TRAINING_LOCK = threading.Lock() 
 
-
-# =========================================
+# =========================================================
 # REQUEST MODEL
-# =========================================
+# =========================================================
 class FLConfig(BaseModel):
     num_clients: int
     k_value: int
     model_choice: str
-    dataset: str | None = None
-    client_split_strategy: str | None = None
+    dataset: str
+    split_strategy: str
 
-
-# =========================================
+# =========================================================
 # START FL
-# =========================================
+# =========================================================
 @app.post("/start_fl")
 def start_fl(config: FLConfig):
-
     global SERVER_PROCESS, CLIENTS
 
-    # =====================================
-    # STOP OLD PROCESS
-    # =====================================
-    if SERVER_PROCESS:
-        SERVER_PROCESS.kill()
+    with TRAINING_LOCK:
+        # =====================================================
+        # CLEANUP PREVIOUS PROCESSES
+        # =====================================================
+        if SERVER_PROCESS:
+            try:
+                SERVER_PROCESS.terminate()
+                SERVER_PROCESS.wait(timeout=5)
+            except Exception:
+                SERVER_PROCESS.kill()
 
-    for c in CLIENTS:
-        c.kill()
+        for c in CLIENTS:
+            try:
+                c.terminate()
+                c.wait(timeout=2)
+            except Exception:
+                c.kill()
+        
+        CLIENTS = []
 
-    CLIENTS = []
+        # =====================================================
+        # BASE DIRECTORIES CREATION
+        # =====================================================
+        os.makedirs("orchestrator/client_data", exist_ok=True)
+        os.makedirs("logs", exist_ok=True)
+        os.makedirs("server", exist_ok=True)
 
-    # =====================================
-    # COPY READY DATASETS TO CLIENTS
-    # =====================================
-    os.makedirs("orchestrator/client_data", exist_ok=True)
+        # Reset the server log file cleanly for the new session
+        with open("logs/server.log", "w", encoding="utf-8") as f:
+            f.write("=== NEW FEDERATED LEARNING SESSION ===\n")
 
-    for i in range(1, config.num_clients + 1):
+        # =====================================================
+        # STEP 1: SAVE CONFIGURATION (Priority for external scripts)
+        # =====================================================
+        server_config = {
+            "model": f"models/{config.model_choice}",
+            "k": config.k_value,
+            "clients": config.num_clients,
+            "dataset": config.dataset,
+            "split_strategy": config.split_strategy
+        }
 
-        source = f"scripts/script{i}.csv"
-        destination = f"orchestrator/client_data/client{i}.csv"
+        with open("server/config.json", "w", encoding="utf-8") as f:
+            json.dump(server_config, f, indent=4)
 
-        shutil.copy(source, destination)
+        # =====================================================
+        # STEP 2: DATA SPLIT VIA COMMAND LINE ARGUMENTS
+        # =====================================================
+        try:
+            if config.split_strategy == "500 / 235":
+                subprocess.run([
+                    sys.executable, "scripts/split_500_235.py", 
+                    str(config.num_clients), config.dataset
+                ], check=True)
+            elif config.split_strategy == "367 / 368":
+                subprocess.run([
+                    sys.executable, "scripts/split_367_368.py", 
+                    str(config.num_clients), config.dataset
+                ], check=True)
+            else:
+                raise HTTPException(status_code=400, detail="Invalid split strategy")
+        except subprocess.CalledProcessError as e:
+            raise HTTPException(status_code=500, detail=f"Data split script error: {e}")
 
-        print(f"[APP] client{i}.csv ready")
+        # =====================================================
+        # STEP 3: VERIFY GENERATED CLIENT FILES
+        # =====================================================
+        for i in range(config.num_clients):
+            expected_file = f"orchestrator/client_data/client{i+1}.csv"
+            if not os.path.exists(expected_file):
+                raise HTTPException(
+                    status_code=500, 
+                    detail=f"The data split script failed to generate: {expected_file}"
+                )
 
-    # =====================================
-    # ORCHESTRATOR (OPTIONNEL)
-    # =====================================
-    # orch = Orchestrator()
-    # if config.dataset:
-    #     orch.load_dataset(config.dataset)
-    #     orch.split_clients(num_clients=config.num_clients)
+        # =====================================================
+        # STEP 4: START FL SERVER AND CLIENT SUBPROCESSES
+        # =====================================================
+        try:
+            log_output = open("logs/server.log", "a", encoding="utf-8")
+            
+            # Start FL Server
+            SERVER_PROCESS = subprocess.Popen(
+                [sys.executable, "server/fl_server.py"],
+                stdout=log_output,
+                stderr=log_output,
+                text=True
+            )
 
-    # =====================================
-    # SERVER CONFIG
-    # =====================================
-    server_config = {
-        "model": f"models/{config.model_choice}",
-        "k": config.k_value,
-        "clients": config.num_clients,
-        "dataset": config.dataset   # ✅ FIX ICI (au lieu de dataset_path)
-    }
+            # Start FL Clients
+            for i in range(config.num_clients):
+                p = subprocess.Popen(
+                    [sys.executable, "clients/client.py", str(i + 1)],
+                    stdout=log_output,
+                    stderr=log_output,
+                    text=True
+                )
+                CLIENTS.append(p)
+                
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Subprocess execution error: {e}")
 
-    os.makedirs("server", exist_ok=True)
+        return {
+            "status": "FL started successfully",
+            "clients": config.num_clients,
+            "k": config.k_value
+        }
 
-    with open("server/config.json", "w") as f:
-        json.dump(server_config, f, indent=4)
-
-    # =====================================
-    # START SERVER
-    # =====================================
-    SERVER_PROCESS = subprocess.Popen([
-        sys.executable,
-        "server/fl_server.py"
-    ])
-
-    # =====================================
-    # START CLIENTS
-    # =====================================
-    for i in range(1, config.num_clients + 1):
-
-        p = subprocess.Popen([
-            sys.executable,
-            "clients/client.py",
-            str(i)
-        ])
-
-        CLIENTS.append(p)
-
-    return {
-        "status": "FL started successfully",
-        "clients": config.num_clients,
-        "k": config.k_value,
-        "model": config.model_choice
-    }
-
-
-# =========================================
+# =========================================================
 # STOP FL
-# =========================================
+# =========================================================
 @app.post("/stop_fl")
 def stop_fl():
-
     global SERVER_PROCESS, CLIENTS
 
-    if SERVER_PROCESS:
-        SERVER_PROCESS.kill()
+    with TRAINING_LOCK:
+        if SERVER_PROCESS:
+            SERVER_PROCESS.terminate()
+            SERVER_PROCESS.wait()
+            SERVER_PROCESS = None
 
-    for c in CLIENTS:
-        c.kill()
+        for c in CLIENTS:
+            c.terminate()
+            c.wait()
+        
+        CLIENTS = []
 
-    CLIENTS = []
-
-    return {
-        "status": "FL stopped"
-    }
+        return {"status": "FL stopped successfully"}

@@ -5,6 +5,7 @@ import pandas as pd
 import warnings
 import os
 import json
+import logging
 
 from sklearn.metrics import (
     accuracy_score,
@@ -15,570 +16,241 @@ from sklearn.metrics import (
     confusion_matrix
 )
 
-warnings.filterwarnings(
-    "ignore",
-    category=UserWarning
-)
+warnings.filterwarnings("ignore", category=UserWarning)
+
+# =========================================================
+# LOG SYSTEM (Correction : Utiliser uniquement les print redirigés par FastAPI)
+# =========================================================
+def log(msg):
+    print(msg, flush=True) # flush=True force l'écriture immédiate dans le terminal/log
+
+# =========================================================
+# LOAD CONFIG (Correction : Gestion d'erreur si le fichier est absent au départ)
+# =========================================================
+config_path = os.path.join(os.path.dirname(__file__), "config.json")
+
+if not os.path.exists(config_path):
+    log("[SERVER ERROR] config.json introuvable. En attente du signal du dashboard...")
+    import sys
+    sys.exit(1)
+
+with open(config_path, "r") as f:
+    CONFIG = json.load(f)
+
+MODEL_PATH = CONFIG["model"]
+K_VALUE = CONFIG["k"]
+NB_CLIENTS = CONFIG["clients"]
+
+log("===================================")
+log("FL CONFIG")
+log(f"Model: {MODEL_PATH}")
+log(f"K: {K_VALUE}")
+log(f"Clients: {NB_CLIENTS}")
+log("===================================")
 
 
-###################################################
-# LECTURE CONFIG DASHBOARD
-###################################################
-
-with open("server/config.json","r") as f:
-    CONFIG=json.load(f)
-
-MODEL_PATH=CONFIG["model"]
-K_VALUE=CONFIG["k"]
-NB_CLIENTS=CONFIG["clients"]
-
-
-print("\n========================")
-print("FL CONFIG")
-print("========================")
-print("Model :",MODEL_PATH)
-print("K :",K_VALUE)
-print("Clients :",NB_CLIENTS)
-print("========================")
-
-
-###################################################
+# =========================================================
 # LOAD MODEL
-###################################################
-
+# =========================================================
 try:
-
-    GM=joblib.load(
-        MODEL_PATH
-    )
-
-    print(
-        f"\n[SERVER] Initial model loaded "
-        f"({len(GM.estimators_)} trees)"
-    )
-
-except:
-
-    raise FileNotFoundError(
-        "Initial model not found"
-    )
+    GM = joblib.load(MODEL_PATH)
+    log(f"[SERVER] Initial model loaded ({len(GM.estimators_)} trees)")
+except Exception as e:
+    raise FileNotFoundError(f"Model not found: {e}")
 
 
-###################################################
-# LOAD GLOBAL TEST
-###################################################
+# =========================================================
+# LOAD TEST DATA
+# =========================================================
+test_data = pd.read_csv("data/test_Data.csv", sep=";")
 
-test_data=pd.read_csv(
-    "data/test_Data.csv",
-    sep=";"
-)
+target = "Progression_Status"
 
-target="Progression_Status"
+X_test_raw = test_data.drop(columns=[target])
+y_test = test_data[target]
 
-X_test_raw=test_data.drop(
-    columns=[target]
-)
+X_test_raw = pd.get_dummies(X_test_raw)
 
-y_test=test_data[target]
-
-X_test_raw=pd.get_dummies(
-    X_test_raw
-)
+log("Test loaded successfully")
 
 
-print("\n======================")
-print("TEST CLASS DISTRIBUTION")
-print("======================")
-print(
-    y_test.value_counts()
-)
-print("======================\n")
-
-
-###################################################
+# =========================================================
 # ALIGN FEATURES
-###################################################
-
-def align_features(
-        X,
-        model
-):
-
-    expected_cols=(
-        model.feature_names_in_
-    )
-
-    X_aligned=X.copy()
+# =========================================================
+def align_features(X, model):
+    expected_cols = model.feature_names_in_
+    X_aligned = X.copy()
 
     for col in expected_cols:
-
         if col not in X_aligned.columns:
+            X_aligned[col] = 0
 
-            X_aligned[col]=0
-
-
-    X_aligned=(
-        X_aligned[expected_cols]
-    )
-
-    return X_aligned
+    return X_aligned[expected_cols]
 
 
-###################################################
-# SAVE DASHBOARD METRICS
-###################################################
+# =========================================================
+# SAVE METRICS
+# =========================================================
+def save_dashboard_metrics(round_num, acc, sens, spec, prec, f1, auc):
 
-def save_dashboard_metrics(
-        round_num,
-        acc,
-        sensitivity,
-        specificity,
-        precision,
-        f1,
-        auc
-):
-
-    metrics={
-
-        "round":round_num,
-
-        "accuracy":
-        float(acc),
-
-        "sensitivity":
-        float(sensitivity),
-
-        "specificity":
-        float(specificity),
-
-        "precision":
-        float(precision),
-
-        "f1":
-        float(f1),
-
-        "auc":
-        float(auc)
-
+    metrics = {
+        "round": round_num,
+        "accuracy": float(acc),
+        "sensitivity": float(sens),
+        "specificity": float(spec),
+        "precision": float(prec),
+        "f1": float(f1),
+        "auc": float(auc)
     }
 
-    with open(
-        "dashboard/global_metrics.json",
-        "w"
-    ) as f:
-
-        json.dump(
-            metrics,
-            f,
-            indent=4
-        )
+    with open("dashboard/global_metrics.json", "w") as f:
+        json.dump(metrics, f, indent=4)
 
 
-###################################################
-# FED STRATEGY
-###################################################
+# =========================================================
+# STRATEGY
+# =========================================================
+class FedTreeStrategy(fl.server.strategy.FedAvg):
 
-class FedTreeStrategy(
-        fl.server.strategy.FedAvg
-):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.stop_training = False
 
-    def __init__(
-            self,
-            *args,
-            **kwargs
-    ):
+    # =========================
+    # INIT
+    # =========================
+    def initialize_parameters(self, client_manager):
 
-        super().__init__(
-            *args,
-            **kwargs
-        )
+        log("[SERVER] Sending initial model...")
 
-        self.stop_after_evaluate=False
-
-
-###################################################
-
-    def initialize_parameters(
-            self,
-            client_manager
-    ):
-
-        print(
-            "[SERVER] Sending initial model..."
-        )
-
-        config={
-
-            "model":GM,
-
-            "K":K_VALUE,
-
-            "params":
-            GM.get_params()
-
+        config = {
+            "model": GM,
+            "K": K_VALUE,
+            "params": GM.get_params()
         }
 
         return fl.common.ndarrays_to_parameters(
-
             [pickle.dumps(config)]
-
         )
 
-
-###################################################
-
-    def aggregate_fit(
-            self,
-            server_round,
-            results,
-            failures
-    ):
+    # =========================
+    # FIT AGGREGATION
+    # =========================
+    def aggregate_fit(self, server_round, results, failures):
 
         global GM
 
-        new_trees=[]
+        new_trees = []
 
-        print(
-            f"\n===== ROUND "
-            f"{server_round}"
-            f" ====="
-        )
+        log(f"\n===== ROUND {server_round} =====")
 
-        for i,(_,fit_res) in enumerate(results):
+        for i, (_, fit_res) in enumerate(results):
 
-            bij=fit_res.metrics.get(
-                "bij"
-            )
-
-            tij_bytes=fit_res.metrics.get(
-                "tij"
-            )
-
+            bij = fit_res.metrics.get("bij")
+            tij_bytes = fit_res.metrics.get("tij")
 
             if bij:
+                log(f"Client {i+1}: already up to date")
 
-                print(
-                    f"Client {i+1}: bij=True"
-                )
+            elif tij_bytes:
+                trees = pickle.loads(tij_bytes)
+                new_trees.extend(trees)
 
-            elif(
-                    not bij
-                    and tij_bytes
-            ):
-
-                trees=pickle.loads(
-                    tij_bytes
-                )
-
-                new_trees.extend(
-                    trees
-                )
-
-                print(
-
-                    f"Client {i+1}: "
-
-                    f"{len(trees)} "
-
-                    f"trees received"
-
-                )
+                log(f"Client {i+1}: {len(trees)} trees received")
 
             else:
+                log(f"Client {i+1}: invalid response")
 
-                print(
-                    f"Client{i+1}"
-                    f":invalid"
-                )
+        if len(new_trees) > 0:
 
+            GM.estimators_.extend(new_trees)
+            GM.n_estimators = len(GM.estimators_)
 
-        if len(new_trees)>0:
-
-            GM.estimators_.extend(
-                new_trees
-            )
-
-            GM.n_estimators=(
-                len(
-                    GM.estimators_
-                )
-            )
-
-            print(
-                f"[SERVER]"
-                f"{len(new_trees)}"
-                f"trees added"
-            )
-
-            print(
-                f"[SERVER]"
-                f"New model size:"
-                f"{GM.n_estimators}"
-            )
+            log(f"[SERVER] +{len(new_trees)} trees added")
+            log(f"[SERVER] Model size: {GM.n_estimators}")
 
         else:
+            log("[SERVER] No updates received → early stop")
+            self.stop_training = True
 
-            print(
-                "[EARLY STOPPING]"
-            )
-
-            self.stop_after_evaluate=True
-
-
-        config_next={
-
-            "model":GM,
-
-            "K":K_VALUE,
-
-            "params":
-            GM.get_params()
-
+        config_next = {
+            "model": GM,
+            "K": K_VALUE,
+            "params": GM.get_params()
         }
 
-
-        return(
-
-            fl.common.ndarrays_to_parameters(
-
-                [pickle.dumps(
-                    config_next
-                )]
-
-            ),
-
+        return (
+            fl.common.ndarrays_to_parameters([pickle.dumps(config_next)]),
             {}
-
         )
 
-
-###################################################
-
-    def evaluate_global_model(
-            self,
-            server_round
-    ):
+    # =========================
+    # EVALUATION
+    # =========================
+    def evaluate_global_model(self, server_round):
 
         global GM
 
+        log("\n===================================")
+        log(f"GLOBAL MODEL ROUND {server_round}")
+        log("===================================")
 
-        print("\n")
-        print("="*50)
+        X_test = align_features(X_test_raw, GM)
 
-        print(
-            f"GLOBAL MODEL "
-            f"ROUND "
-            f"{server_round}"
-        )
+        y_pred = GM.predict(X_test)
+        y_prob = GM.predict_proba(X_test)[:, 1]
 
-        print("="*50)
+        acc = accuracy_score(y_test, y_pred)
+        sens = recall_score(y_test, y_pred, zero_division=0)
 
+        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+        spec = tn / (tn + fp) if (tn + fp) > 0 else 0
 
-        X_test=align_features(
-            X_test_raw,
-            GM
-        )
+        prec = precision_score(y_test, y_pred, zero_division=0)
+        f1 = f1_score(y_test, y_pred)
+        auc = roc_auc_score(y_test, y_prob)
 
+        log(f"Accuracy: {acc:.4f}")
+        log(f"Sensitivity: {sens:.4f}")
+        log(f"Specificity: {spec:.4f}")
+        log(f"Precision: {prec:.4f}")
+        log(f"F1: {f1:.4f}")
+        log(f"AUC: {auc:.4f}")
 
-        y_pred=GM.predict(
-            X_test
-        )
+        save_dashboard_metrics(server_round, acc, sens, spec, prec, f1, auc)
 
+    # =========================
+    # EVALUATE AGGREGATION
+    # =========================
+    def aggregate_evaluate(self, server_round, results, failures):
 
-        y_prob=(
-            GM.predict_proba(
-                X_test
-            )[:,1]
-        )
+        loss, _ = super().aggregate_evaluate(server_round, results, failures)
 
+        self.evaluate_global_model(server_round)
 
-        acc=accuracy_score(
-            y_test,
-            y_pred
-        )
+        return loss, {}
 
 
-        sensitivity=recall_score(
-            y_test,
-            y_pred,
-            zero_division=0
-        )
+# =========================================================
+# START SERVER
+# =========================================================
+if __name__ == "__main__":
 
-
-        tn,fp,fn,tp=confusion_matrix(
-            y_test,
-            y_pred
-        ).ravel()
-
-
-        specificity=(
-            tn/(tn+fp)
-        )
-
-
-        precision=precision_score(
-            y_test,
-            y_pred
-        )
-
-
-        f1=f1_score(
-            y_test,
-            y_pred
-        )
-
-
-        auc=roc_auc_score(
-            y_test,
-            y_prob
-        )
-
-
-        print(
-            f"Accuracy:{acc:.4f}"
-        )
-
-        print(
-            f"Sensitivity:{sensitivity:.4f}"
-        )
-
-        print(
-            f"Specificity:{specificity:.4f}"
-        )
-
-        print(
-            f"Precision:{precision:.4f}"
-        )
-
-        print(
-            f"F1:{f1:.4f}"
-        )
-
-        print(
-            f"AUC:{auc:.4f}"
-        )
-
-
-        save_dashboard_metrics(
-
-            server_round,
-
-            acc,
-
-            sensitivity,
-
-            specificity,
-
-            precision,
-
-            f1,
-
-            auc
-
-        )
-
-
-###################################################
-
-    def aggregate_evaluate(
-            self,
-            server_round,
-            results,
-            failures
-    ):
-
-        loss,_=super().aggregate_evaluate(
-
-            server_round,
-
-            results,
-
-            failures
-
-        )
-
-        self.evaluate_global_model(
-            server_round
-        )
-
-
-        if(
-            self.stop_after_evaluate
-        ):
-
-            print(
-                "\nFINAL STOP"
-            )
-
-            joblib.dump(
-
-                GM,
-
-                "FINAL_federated_model.pkl"
-
-            )
-
-            raise StopIteration(
-                "Done"
-            )
-
-
-        return loss,{}
-
-
-###################################################
-
-if __name__=="__main__":
-
-
-    strategy=FedTreeStrategy(
-
-        min_fit_clients=
-        NB_CLIENTS,
-
-        min_available_clients=
-        NB_CLIENTS,
-
-        min_evaluate_clients=
-        NB_CLIENTS
-
+    strategy = FedTreeStrategy(
+        min_fit_clients=NB_CLIENTS,
+        min_available_clients=NB_CLIENTS,
+        min_evaluate_clients=NB_CLIENTS
     )
-
 
     try:
-
         fl.server.start_server(
-
-            server_address=
-            "0.0.0.0:8080",
-
-            config=
-            fl.server.ServerConfig(
-
-                num_rounds=15
-
-            ),
-
-            strategy=
-            strategy
-
+            server_address="0.0.0.0:8080",
+            config=fl.server.ServerConfig(num_rounds=15),
+            strategy=strategy
         )
 
+    except Exception as e:
+        log(f"ERROR: {e}")
 
-    except StopIteration as e:
-
-        print(e)
-
-
-    print("\n")
-
-    print("="*50)
-
-    print(
-        "TRAINING FINISHED"
-    )
-
-    print("="*50)
-
-
+    log("\nTRAINING FINISHED")
     os._exit(0)
