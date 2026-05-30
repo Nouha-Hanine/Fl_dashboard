@@ -4,11 +4,11 @@ import os
 
 def split_500_data(df, num_clients):
     """
-    Découpe dynamiquement le sous-dataset 500 en fonction du nombre de clients.
+    Découpe le sous-dataset 500 en fonction du nombre de clients.
+    L'ordre original du premier script est préservé (pas de double shuffle).
     """
     output_dir = "orchestrator/client_data"
     os.makedirs(output_dir, exist_ok=True)
-    df = df.sample(frac=1, random_state=42).reset_index(drop=True)
     
     print(f"[SPLIT 500] Dispatching into {num_clients} client files...")
 
@@ -37,10 +37,10 @@ def split_500_data(df, num_clients):
 def split_235_data(df, num_clients):
     """
     Découpe le sous-dataset 235 selon les ratios asymétriques spécifiés.
+    L'ordre original du premier script est préservé (pas de double shuffle).
     """
     output_dir = "orchestrator/client_data"
     os.makedirs(output_dir, exist_ok=True)
-    df = df.sample(frac=1, random_state=42).reset_index(drop=True)
     n = len(df)
     
     print(f"[SPLIT 235] Dispatching into {num_clients} client files...")
@@ -64,14 +64,15 @@ def split_235_data(df, num_clients):
             end = start + int(n * ratio)
             part = df.iloc[start:end]
             
-        part.to_csv(f"{output_dir}/client{i+1}.csv", index=False)
+        # index=False pour garder la structure propre de tes premiers résultats
+        part.to_csv(f"{output_dir}/client{i+1}.csv", index=False, sep=";")
         print(f"[SPLIT 235] Client {i+1} saved -> {len(part)} rows")
         start = end
 
 
 if __name__ == "__main__":
     # =====================================================
-    # 1. RÉCUPÉRATION DES ARGUMENTS DEPUIS L'API FASTAPI
+    # 1. RÉCUPÉRATION DES ARGUMENTS
     # =====================================================
     if len(sys.argv) < 3:
         print("Usage: python split_500_235.py [num_clients] [dataset_name]")
@@ -92,8 +93,8 @@ if __name__ == "__main__":
 
     df_global = pd.read_csv(source_file, sep=None, engine="python")
     
-    # Mélange initial du dataset complet
-    df_global = df_global.sample(frac=1, random_state=42).reset_index(drop=True)
+    # CORRECTION : random_state passé de 42 à 10 pour copier ton script initial !
+    df_global = df_global.sample(frac=1, random_state=10).reset_index(drop=True)
 
     # Séparation stricte 500 / 235
     df_500 = df_global.iloc[:500]
