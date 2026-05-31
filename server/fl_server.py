@@ -251,6 +251,18 @@ if __name__ == "__main__":
 
     except Exception as e:
         log(f"ERROR: {e}")
-
+    # =========================================================
+    # AJOUT : SAUVEGARDE DU MODÈLE GLOBAL FINAL
+    # =========================================================
+    try:
+        os.makedirs("models", exist_ok=True)
+        final_model_path = "models/global_model_final.pkl"
+        
+        
+        joblib.dump(GM, final_model_path)
+        log(f"\n[SERVER] ✅ Final global model successfully saved to {final_model_path}")
+    except Exception as save_error:
+        log(f"\n[SERVER ERROR] Cannot save final model: {save_error}")
+    # =========================================================
     log("\nTRAINING FINISHED")
     os._exit(0)
