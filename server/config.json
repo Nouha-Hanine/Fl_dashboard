@@ -1,7 +1,7 @@
 {
-    "model": "models/random_forest_model_tcga+emtab367.pkl",
-    "k": 20,
+    "model": "models/random2_forest_model_tcga+emtab500.pkl",
+    "k": 10,
     "clients": 2,
-    "dataset": "368_Data.csv",
-    "split_strategy": "367 / 368"
+    "dataset": "235_Data.csv",
+    "split_strategy": "500 / 235"
 }

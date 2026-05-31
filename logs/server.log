@@ -1,11 +1,11 @@
 === NEW FEDERATED LEARNING SESSION ===
 ===================================
 FL CONFIG
-Model: models/random_forest_model_tcga+emtab367.pkl
-K: 20
+Model: models/random2_forest_model_tcga+emtab500.pkl
+K: 10
 Clients: 2
 ===================================
-[SERVER] Initial model loaded (200 trees)
+[SERVER] Initial model loaded (100 trees)
 Test loaded successfully
 [93mWARNING [0m:   DEPRECATED FEATURE: flwr.server.start_server() is deprecated.
 	Instead, use the `flower-superlink` CLI command to start a SuperLink as shown below:
@@ -60,23 +60,23 @@ Test loaded successfully
         
 [92mINFO [0m:      configure_fit: strategy sampled 2 clients (out of 2)
 [92mINFO [0m:      
-[92mINFO [0m:      Received: train message 4031580b-d617-4b08-b321-b7b98630043c
+[92mINFO [0m:      Received: train message 690d0cb8-948d-4475-80d5-8823b3ccfcfc
 [92mINFO [0m:      
-[92mINFO [0m:      Received: train message 0effed2a-d4e4-46d5-85f9-e7fbe77ecc59
+[92mINFO [0m:      Received: train message df330d9c-2604-45bf-b98f-7fe1aebed595
 [92mINFO [0m:      Sent reply
 [92mINFO [0m:      Sent reply
 [92mINFO [0m:      aggregate_fit: received 2 results and 0 failures
 
 ===== ROUND 1 =====
-Client 1: 20 trees received
-Client 2: 20 trees received
-[SERVER] +40 trees added
-[SERVER] Model size: 240
+Client 1: 10 trees received
+Client 2: 10 trees received
+[SERVER] +20 trees added
+[SERVER] Model size: 120
 [92mINFO [0m:      configure_evaluate: strategy sampled 2 clients (out of 2)
 [92mINFO [0m:      
-[92mINFO [0m:      Received: evaluate message 557fdfec-c834-4806-8358-b921140a91a3
+[92mINFO [0m:      Received: evaluate message 384c1a5e-30f1-4e2f-9408-4bf8c7036baf
 [92mINFO [0m:      
-[92mINFO [0m:      Received: evaluate message db9138b5-6ac9-43b8-84ad-e7ca31305587
+[92mINFO [0m:      Received: evaluate message a638feef-99b3-45fa-a736-b54ed8cb0e64
 [92mINFO [0m:      Sent reply
 [92mINFO [0m:      Sent reply
 [92mINFO [0m:      aggregate_evaluate: received 2 results and 0 failures
@@ -85,33 +85,33 @@ Client 2: 20 trees received
 ===================================
 GLOBAL MODEL ROUND 1
 ===================================
-Accuracy: 0.6846
-Sensitivity: 0.8077
-Specificity: 0.6026
-Precision: 0.5753
-F1: 0.6720
-AUC: 0.7569
+Accuracy: 0.7692
+Sensitivity: 0.7885
+Specificity: 0.7564
+Precision: 0.6833
+F1: 0.7321
+AUC: 0.8703
 [92mINFO [0m:      
 [92mINFO [0m:      [ROUND 2]
 [92mINFO [0m:      configure_fit: strategy sampled 2 clients (out of 2)
 [92mINFO [0m:      
-[92mINFO [0m:      Received: train message 72e4c6dd-a7ac-4510-8c12-db1cc4f84c4a
+[92mINFO [0m:      Received: train message b33daae3-0335-45a4-b2ff-b08a291c978d
 [92mINFO [0m:      
-[92mINFO [0m:      Received: train message 7a806a82-0896-4ba2-8dde-6d404accb8d9
+[92mINFO [0m:      Received: train message a43eb5b7-3384-47e5-8197-27eac56bb529
 [92mINFO [0m:      Sent reply
 [92mINFO [0m:      Sent reply
 [92mINFO [0m:      aggregate_fit: received 2 results and 0 failures
 
 ===== ROUND 2 =====
-Client 1: 20 trees received
-Client 2: 20 trees received
-[SERVER] +40 trees added
-[SERVER] Model size: 280
+Client 1: 10 trees received
+Client 2: 10 trees received
+[SERVER] +20 trees added
+[SERVER] Model size: 140
 [92mINFO [0m:      configure_evaluate: strategy sampled 2 clients (out of 2)
 [92mINFO [0m:      
-[92mINFO [0m:      Received: evaluate message 988fc1f3-4aae-42d4-86f5-23361a5d1191
+[92mINFO [0m:      Received: evaluate message e4f91961-7a1e-4df7-94b7-bc654d305fb1
 [92mINFO [0m:      
-[92mINFO [0m:      Received: evaluate message 1e703b47-fc6c-4bfc-81ac-a253795647d2
+[92mINFO [0m:      Received: evaluate message 9cfa80cc-f386-4340-bb5b-e963ef8946ba
 [92mINFO [0m:      Sent reply
 [92mINFO [0m:      Sent reply
 [92mINFO [0m:      aggregate_evaluate: received 2 results and 0 failures
@@ -119,33 +119,33 @@ Client 2: 20 trees received
 ===================================
 GLOBAL MODEL ROUND 2
 ===================================
-Accuracy: 0.6846
-Sensitivity: 0.8269
-Specificity: 0.5897
-Precision: 0.5733
-F1: 0.6772
-AUC: 0.7739
+Accuracy: 0.7692
+Sensitivity: 0.7885
+Specificity: 0.7564
+Precision: 0.6833
+F1: 0.7321
+AUC: 0.8738
 [92mINFO [0m:      
 [92mINFO [0m:      [ROUND 3]
 [92mINFO [0m:      configure_fit: strategy sampled 2 clients (out of 2)
 [92mINFO [0m:      
-[92mINFO [0m:      Received: train message e453c200-e62e-4c6e-a246-f736f1154414
+[92mINFO [0m:      Received: train message fa20bf42-5533-4492-bc9f-eee09a2f662f
 [92mINFO [0m:      
-[92mINFO [0m:      Received: train message f6887281-b694-4ca1-8bc5-e99209668085
+[92mINFO [0m:      Received: train message ba553cab-96d3-4ecc-a669-d56ca7c0283c
 [92mINFO [0m:      Sent reply
 [92mINFO [0m:      Sent reply
 [92mINFO [0m:      aggregate_fit: received 2 results and 0 failures
 
 ===== ROUND 3 =====
-Client 1: 20 trees received
-Client 2: 20 trees received
-[SERVER] +40 trees added
-[SERVER] Model size: 320
+Client 1: 10 trees received
+Client 2: 10 trees received
+[SERVER] +20 trees added
+[SERVER] Model size: 160
 [92mINFO [0m:      configure_evaluate: strategy sampled 2 clients (out of 2)
 [92mINFO [0m:      
-[92mINFO [0m:      Received: evaluate message e330d850-b916-4c43-b198-9a5c287081a6
+[92mINFO [0m:      Received: evaluate message 2695a9e2-083b-4cfc-b510-077197da4cde
 [92mINFO [0m:      
-[92mINFO [0m:      Received: evaluate message 1d0fa930-00bd-45ad-ac95-ea9eb53d1675
+[92mINFO [0m:      Received: evaluate message 42e1f48a-93b7-4c84-9da3-75c1c05bf7e0
 [92mINFO [0m:      Sent reply
 [92mINFO [0m:      Sent reply
 [92mINFO [0m:      aggregate_evaluate: received 2 results and 0 failures
@@ -153,33 +153,33 @@ Client 2: 20 trees received
 ===================================
 GLOBAL MODEL ROUND 3
 ===================================
-Accuracy: 0.6769
-Sensitivity: 0.8269
-Specificity: 0.5769
-Precision: 0.5658
-F1: 0.6719
-AUC: 0.7734
+Accuracy: 0.7846
+Sensitivity: 0.7885
+Specificity: 0.7821
+Precision: 0.7069
+F1: 0.7455
+AUC: 0.8720
 [92mINFO [0m:      
 [92mINFO [0m:      [ROUND 4]
 [92mINFO [0m:      configure_fit: strategy sampled 2 clients (out of 2)
 [92mINFO [0m:      
-[92mINFO [0m:      Received: train message 88149260-cd06-41a4-83ec-bdd47e213494
+[92mINFO [0m:      Received: train message aa4a7888-8081-443f-8cc6-5b379375e7b1
 [92mINFO [0m:      
-[92mINFO [0m:      Received: train message 3694a989-e75c-4e22-9cdc-f6b1d89ca802
+[92mINFO [0m:      Received: train message e728e62e-9d67-4bad-b895-5c3c8274a303
 [92mINFO [0m:      Sent reply
 [92mINFO [0m:      Sent reply
 [92mINFO [0m:      aggregate_fit: received 2 results and 0 failures
 
 ===== ROUND 4 =====
-Client 1: 20 trees received
-Client 2: 20 trees received
-[SERVER] +40 trees added
-[SERVER] Model size: 360
+Client 1: already up to date
+Client 2: 10 trees received
+[SERVER] +10 trees added
+[SERVER] Model size: 170
 [92mINFO [0m:      configure_evaluate: strategy sampled 2 clients (out of 2)
 [92mINFO [0m:      
-[92mINFO [0m:      Received: evaluate message b59f0d31-72c9-43ef-ae1e-6e183d4b11f4
+[92mINFO [0m:      Received: evaluate message 3bd0df6b-8309-4015-9471-476df72df2ef
 [92mINFO [0m:      
-[92mINFO [0m:      Received: evaluate message 63886465-8b38-4a85-bb4c-dca5fcf4a8cb
+[92mINFO [0m:      Received: evaluate message fb262279-864c-40f8-b719-dbd191871570
 [92mINFO [0m:      Sent reply
 [92mINFO [0m:      Sent reply
 [92mINFO [0m:      aggregate_evaluate: received 2 results and 0 failures
@@ -187,19 +187,19 @@ Client 2: 20 trees received
 ===================================
 GLOBAL MODEL ROUND 4
 ===================================
-Accuracy: 0.6846
-Sensitivity: 0.8077
-Specificity: 0.6026
-Precision: 0.5753
-F1: 0.6720
-AUC: 0.7695
+Accuracy: 0.7846
+Sensitivity: 0.7885
+Specificity: 0.7821
+Precision: 0.7069
+F1: 0.7455
+AUC: 0.8720
 [92mINFO [0m:      
 [92mINFO [0m:      [ROUND 5]
 [92mINFO [0m:      configure_fit: strategy sampled 2 clients (out of 2)
 [92mINFO [0m:      
-[92mINFO [0m:      Received: train message af31942e-6e3e-4f3e-b097-9ff428772968
+[92mINFO [0m:      Received: train message c16e43e5-c8b8-47eb-b45c-1dc317364992
 [92mINFO [0m:      
-[92mINFO [0m:      Received: train message f52bdd61-61bb-4f7a-8651-a3ca3030615d
+[92mINFO [0m:      Received: train message 6dbc039d-40fe-4c34-a0a1-6422b05e3d09
 [92mINFO [0m:      Sent reply
 [92mINFO [0m:      Sent reply
 [92mINFO [0m:      aggregate_fit: received 2 results and 0 failures
@@ -213,158 +213,157 @@ TRAINING FINISHED
 
 [CLIENT 1] Starting...
 [CLIENT 1] Loading: orchestrator/client_data/client1.csv
-[CLIENT 1] Data loaded successfully! (147 rows)
+[CLIENT 1] Data loaded successfully! (94 rows)
 [CLIENT 1] Connecting to FL server...
 
 --- [CLIENT 1] FIT PHASE ---
-[CLIENT 1] Received global model (200 trees)
-[CLIENT 1] Local F1 = 0.7273
+[CLIENT 1] Received global model (100 trees)
+[CLIENT 1] Local F1 = 0.7143
 [CLIENT 1] Generating corrective trees...
-[CLIENT 1] 20 trees sent
+[CLIENT 1] 10 trees sent
 
 --- [CLIENT 1] EVALUATION ---
 
 ========== RESULTS ==========
-Loss        : 0.1538
-F1 Score    : 0.8462
-Accuracy    : 0.8667
-Sensitivity : 0.8462
-Precision   : 0.8462
-Specificity : 0.8824
-ROC AUC     : 0.9457
+Loss        : 0.1579
+F1 Score    : 0.8421
+Accuracy    : 0.8421
+Sensitivity : 1.0000
+Precision   : 0.7273
+Specificity : 0.7273
+ROC AUC     : 0.8636
 
 --- [CLIENT 1] FIT PHASE ---
-[CLIENT 1] Received global model (240 trees)
-[CLIENT 1] Local F1 = 0.7438
+[CLIENT 1] Received global model (120 trees)
+[CLIENT 1] Local F1 = 0.7761
 [CLIENT 1] Generating corrective trees...
-[CLIENT 1] 20 trees sent
+[CLIENT 1] 10 trees sent
 
 --- [CLIENT 1] EVALUATION ---
 
 ========== RESULTS ==========
-Loss        : 0.1538
-F1 Score    : 0.8462
-Accuracy    : 0.8667
-Sensitivity : 0.8462
-Precision   : 0.8462
-Specificity : 0.8824
-ROC AUC     : 0.9593
+Loss        : 0.1579
+F1 Score    : 0.8421
+Accuracy    : 0.8421
+Sensitivity : 1.0000
+Precision   : 0.7273
+Specificity : 0.7273
+ROC AUC     : 0.8636
 
 --- [CLIENT 1] FIT PHASE ---
-[CLIENT 1] Received global model (280 trees)
-[CLIENT 1] Local F1 = 0.7480
+[CLIENT 1] Received global model (140 trees)
+[CLIENT 1] Local F1 = 0.7761
 [CLIENT 1] Generating corrective trees...
-[CLIENT 1] 20 trees sent
+[CLIENT 1] 10 trees sent
 
 --- [CLIENT 1] EVALUATION ---
 
 ========== RESULTS ==========
-Loss        : 0.1852
-F1 Score    : 0.8148
-Accuracy    : 0.8333
-Sensitivity : 0.8462
-Precision   : 0.7857
-Specificity : 0.8235
-ROC AUC     : 0.9593
+Loss        : 0.1579
+F1 Score    : 0.8421
+Accuracy    : 0.8421
+Sensitivity : 1.0000
+Precision   : 0.7273
+Specificity : 0.7273
+ROC AUC     : 0.8636
 
 --- [CLIENT 1] FIT PHASE ---
-[CLIENT 1] Received global model (320 trees)
-[CLIENT 1] Local F1 = 0.7480
-[CLIENT 1] Generating corrective trees...
-[CLIENT 1] 20 trees sent
+[CLIENT 1] Received global model (160 trees)
+[CLIENT 1] Local F1 = 0.7879
+[CLIENT 1] No corrections needed
 
 --- [CLIENT 1] EVALUATION ---
 
 ========== RESULTS ==========
-Loss        : 0.1852
-F1 Score    : 0.8148
-Accuracy    : 0.8333
-Sensitivity : 0.8462
-Precision   : 0.7857
-Specificity : 0.8235
-ROC AUC     : 0.9638
+Loss        : 0.1579
+F1 Score    : 0.8421
+Accuracy    : 0.8421
+Sensitivity : 1.0000
+Precision   : 0.7273
+Specificity : 0.7273
+ROC AUC     : 0.8636
 
 --- [CLIENT 1] FIT PHASE ---
-[CLIENT 1] Received global model (360 trees)
-[CLIENT 1] Local F1 = 0.7899
+[CLIENT 1] Received global model (170 trees)
+[CLIENT 1] Local F1 = 0.7879
 [CLIENT 1] No corrections needed
 [CLIENT 1] Server stopped
 
 [CLIENT 2] Starting...
 [CLIENT 2] Loading: orchestrator/client_data/client2.csv
-[CLIENT 2] Data loaded successfully! (221 rows)
+[CLIENT 2] Data loaded successfully! (141 rows)
 [CLIENT 2] Connecting to FL server...
 
 --- [CLIENT 2] FIT PHASE ---
-[CLIENT 2] Received global model (200 trees)
-[CLIENT 2] Local F1 = 0.7072
+[CLIENT 2] Received global model (100 trees)
+[CLIENT 2] Local F1 = 0.7961
 [CLIENT 2] Generating corrective trees...
-[CLIENT 2] 20 trees sent
+[CLIENT 2] 10 trees sent
 
 --- [CLIENT 2] EVALUATION ---
 
 ========== RESULTS ==========
-Loss        : 0.3182
-F1 Score    : 0.6818
-Accuracy    : 0.6889
-Sensitivity : 0.7500
-Precision   : 0.6250
-Specificity : 0.6400
-ROC AUC     : 0.7680
+Loss        : 0.1200
+F1 Score    : 0.8800
+Accuracy    : 0.8966
+Sensitivity : 0.9167
+Precision   : 0.8462
+Specificity : 0.8824
+ROC AUC     : 0.9755
 
 --- [CLIENT 2] FIT PHASE ---
-[CLIENT 2] Received global model (240 trees)
-[CLIENT 2] Local F1 = 0.7204
+[CLIENT 2] Received global model (120 trees)
+[CLIENT 2] Local F1 = 0.7767
 [CLIENT 2] Generating corrective trees...
-[CLIENT 2] 20 trees sent
+[CLIENT 2] 10 trees sent
 
 --- [CLIENT 2] EVALUATION ---
 
 ========== RESULTS ==========
-Loss        : 0.3333
-F1 Score    : 0.6667
-Accuracy    : 0.6667
-Sensitivity : 0.7500
-Precision   : 0.6000
-Specificity : 0.6000
-ROC AUC     : 0.7580
+Loss        : 0.1200
+F1 Score    : 0.8800
+Accuracy    : 0.8966
+Sensitivity : 0.9167
+Precision   : 0.8462
+Specificity : 0.8824
+ROC AUC     : 0.9755
 
 --- [CLIENT 2] FIT PHASE ---
-[CLIENT 2] Received global model (280 trees)
-[CLIENT 2] Local F1 = 0.7225
+[CLIENT 2] Received global model (140 trees)
+[CLIENT 2] Local F1 = 0.7736
 [CLIENT 2] Generating corrective trees...
-[CLIENT 2] 20 trees sent
+[CLIENT 2] 10 trees sent
 
 --- [CLIENT 2] EVALUATION ---
 
 ========== RESULTS ==========
-Loss        : 0.3333
-F1 Score    : 0.6667
-Accuracy    : 0.6667
-Sensitivity : 0.7500
-Precision   : 0.6000
-Specificity : 0.6000
-ROC AUC     : 0.7580
+Loss        : 0.1200
+F1 Score    : 0.8800
+Accuracy    : 0.8966
+Sensitivity : 0.9167
+Precision   : 0.8462
+Specificity : 0.8824
+ROC AUC     : 0.9755
 
 --- [CLIENT 2] FIT PHASE ---
-[CLIENT 2] Received global model (320 trees)
-[CLIENT 2] Local F1 = 0.7292
+[CLIENT 2] Received global model (160 trees)
+[CLIENT 2] Local F1 = 0.7736
 [CLIENT 2] Generating corrective trees...
-[CLIENT 2] 20 trees sent
+[CLIENT 2] 10 trees sent
 
 --- [CLIENT 2] EVALUATION ---
 
 ========== RESULTS ==========
-Loss        : 0.3333
-F1 Score    : 0.6667
-Accuracy    : 0.6667
-Sensitivity : 0.7500
-Precision   : 0.6000
-Specificity : 0.6000
-ROC AUC     : 0.7660
+Loss        : 0.1200
+F1 Score    : 0.8800
+Accuracy    : 0.8966
+Sensitivity : 0.9167
+Precision   : 0.8462
+Specificity : 0.8824
+ROC AUC     : 0.9804
 
 --- [CLIENT 2] FIT PHASE ---
-[CLIENT 2] Received global model (360 trees)
-[CLIENT 2] Local F1 = 0.7407
+[CLIENT 2] Received global model (170 trees)
+[CLIENT 2] Local F1 = 0.8037
 [CLIENT 2] No corrections needed
 [CLIENT 2] Server stopped

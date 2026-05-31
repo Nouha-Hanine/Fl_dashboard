@@ -299,7 +299,10 @@ model_choice = st.sidebar.selectbox(
     [
         "random_forest_model_tcga+emtab235.pkl",
         "random_forest_model_tcga+emtab367.pkl",
-        "random_forest_model_tcga+emtab500.pkl"
+        "random_forest_model_tcga+emtab500.pkl",
+        "random2_forest_model_tcga+emtab500.pkl",
+        "random2_forest_model_tcga+emtab367.pkl",
+        "random2_forest_model_tcga+emtab235.pkl"
     ]
 )
 
