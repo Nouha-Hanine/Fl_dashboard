@@ -62,9 +62,9 @@ except Exception as e:
 # =========================================================
 # LOAD TEST DATA
 # =========================================================
-test_data = pd.read_csv("data/test_Data.csv", sep=";")
+test_data = pd.read_csv("data/test_Data.csv")
 
-target = "Progression_Status"
+target = "Recurrence"
 
 X_test_raw = test_data.drop(columns=[target])
 y_test = test_data[target]

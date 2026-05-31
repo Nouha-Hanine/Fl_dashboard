@@ -76,18 +76,22 @@ def start_fl(config: FLConfig):
             json.dump(server_config, f, indent=4)
 
         # =====================================================
-        # STEP 2: DATA SPLIT VIA COMMAND LINE ARGUMENTS
+        # STEP 2: DATA SPLIT VIA COMMAND LINE ARGUMENTS (CORRIGÉ)
         # =====================================================
         try:
             if config.split_strategy == "500 / 235":
                 subprocess.run([
                     sys.executable, "scripts/split_500_235.py", 
-                    str(config.num_clients), config.dataset
+                    str(config.num_clients), 
+                    "data/735_Data.csv",     # sys.argv[2] -> Chemin réel de ton fichier source
+                    config.dataset           # sys.argv[3] -> Bloc cible dynamique ("235" ou "500")
                 ], check=True)
             elif config.split_strategy == "367 / 368":
                 subprocess.run([
                     sys.executable, "scripts/split_367_368.py", 
-                    str(config.num_clients), config.dataset
+                    str(config.num_clients), 
+                    "data/735_Data.csv",     # Alignement du chemin source
+                    config.dataset           # Envoi de la configuration cible
                 ], check=True)
             else:
                 raise HTTPException(status_code=400, detail="Invalid split strategy")

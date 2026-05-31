@@ -45,7 +45,7 @@ def get_data():
         # MODIFICATION: Remove hidden white spaces from column names
         df.columns = df.columns.str.strip()
 
-        target = "Progression_Status"
+        target = "Recurrence"
 
         # Safety check before splitting features and target
         if target not in df.columns:

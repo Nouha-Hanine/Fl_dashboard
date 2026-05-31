@@ -313,7 +313,7 @@ dataset_path = "data/735_Data.csv"
 
 if os.path.exists(dataset_path):
 
-    df = pd.read_csv(dataset_path, sep=";")
+    df = pd.read_csv(dataset_path)
 
     c1, c2, c3 = st.columns(3)
 
@@ -486,7 +486,7 @@ st.markdown("---")
 # CLIENT RESULTS
 # =========================================================
 st.markdown(
-    '<div class="section-title">🧠 Client Visualizations</div>',
+    '<div class="section-title"> 📊 Client Visualizations</div>',
     unsafe_allow_html=True
 )
 
@@ -532,7 +532,7 @@ st.markdown(
     """
     <center>
         <span style='color:#94a3b8'>
-            🚀 FL Dashboard PRO • Real-Time Federated Learning Monitoring System
+            🚀 FL Dashboard • Real-Time Federated Learning Monitoring System
         </span>
     </center>
     """,
