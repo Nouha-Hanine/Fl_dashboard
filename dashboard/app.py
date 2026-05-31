@@ -4,7 +4,7 @@ import pandas as pd
 import requests
 import os
 import json
-
+import time
 # =========================================================
 # PAGE CONFIG
 # =========================================================
@@ -13,6 +13,12 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+# =========================================================
+# AUTO-REFRESH CONFIGURATION (TEMPS RÉEL)
+# =========================================================
+# Si l'entraînement est actif, on force la page à se recharger toutes les 2 secondes
+if "training_active" not in st.session_state:
+    st.session_state.training_active = False
 
 # =========================================================
 # CUSTOM CSS (ULTRA MODERN UI)
@@ -300,7 +306,11 @@ model_choice = st.sidebar.selectbox(
 st.sidebar.markdown("---")
 st.sidebar.success("System Ready")
 
-
+# Changement d'état visuel de la sidebar en direct
+if st.session_state.training_active:
+    st.sidebar.warning("🔄 Training in progress...")
+else:
+    st.sidebar.success("System Ready")
 # =========================================================
 # DATASET PREVIEW
 # =========================================================
@@ -348,17 +358,11 @@ st.write("")
 # =========================================================
 # CONTROL PANEL
 # =========================================================
-st.markdown(
-    '<div class="section-title">🎛️ Control Center</div>',
-    unsafe_allow_html=True
-)
-
+st.markdown('<div class="section-title">🎛️ Control Center</div>', unsafe_allow_html=True)
 control4, control5 = st.columns(2)
 
 with control4:
-
     if st.button("🚀 START FL TRAINING"):
-
         try:
             response = requests.post(
                 "http://127.0.0.1:8000/start_fl",
@@ -370,33 +374,26 @@ with control4:
                     "split_strategy": split_choice,
                 }
             )
-
             if response.status_code == 200:
+                # Ajout de l'activation du temps réel
+                st.session_state.training_active = True
                 st.success("Federated Learning started")
+                st.rerun()
             else:
                 st.error(response.text)
-
         except Exception as e:
             st.error(f"Cannot start FL: {e}")
 
-
 with control5:
-
     if st.button("🛑 STOP TRAINING"):
-
         try:
-            response = requests.post(
-                "http://127.0.0.1:8000/stop_fl"
-            )
-
+            response = requests.post("http://127.0.0.1:8000/stop_fl")
+            # Désactivation immédiate au clic
+            st.session_state.training_active = False
             st.warning("Training stopped")
-
+            st.rerun()
         except Exception as e:
             st.error(f"Stop failed: {e}")
-
-
-st.write("")
-st.markdown("---")
 
 
 # =========================================================
@@ -456,15 +453,10 @@ st.markdown("---")
 # =========================================================
 # SERVER LOGS
 # =========================================================
-st.markdown(
-    '<div class="section-title">🖥️ Server Logs</div>',
-    unsafe_allow_html=True
-)
-
+st.markdown('<div class="section-title">🖥️ Server Logs</div>', unsafe_allow_html=True)
 log_path = "logs/server.log"
 
 if os.path.exists(log_path):
-
     with open(log_path, "r", encoding="utf-8") as f:
         logs = f.read()
 
@@ -473,13 +465,12 @@ if os.path.exists(log_path):
         value=logs,
         height=300
     )
-
+    
+    # Sécurité : Coupe l'auto-refresh automatiquement si ces mots-clés apparaissent
+    if "TRAINING FINISHED" in logs or "ERROR:" in logs:
+        st.session_state.training_active = False
 else:
     st.info("No logs yet")
-
-
-st.write("")
-st.markdown("---")
 
 
 # =========================================================
@@ -490,6 +481,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+from PIL import Image  # Ajout requis pour la vérification de sécurité
+
 for i in range(1, num_clients + 1):
 
     with st.expander(f"📊 Client {i} Results"):
@@ -499,23 +492,31 @@ for i in range(1, num_clients + 1):
         if os.path.exists(result_folder):
 
             files = os.listdir(result_folder)
-
             images = [f for f in files if f.endswith(".png")]
 
             if len(images) == 0:
                 st.info("No graphs generated yet")
 
             else:
-
                 cols = st.columns(2)
 
                 for idx, img in enumerate(images):
-
-                    cols[idx % 2].image(
-                        f"{result_folder}/{img}",
-                        caption=img,
-                        use_container_width=True
-                    )
+                    img_path = f"{result_folder}/{img}"
+                    
+                    try:
+                        # SÉCURITÉ : On vérifie si l'image est valide et totalement écrite sur le disque
+                        with Image.open(img_path) as v_img:
+                            v_img.verify() 
+                        
+                        # Si elle est valide, on l'affiche avec la nouvelle syntaxe demandée par Streamlit
+                        cols[idx % 2].image(
+                            img_path,
+                            caption=img,
+                            width="stretch"  # Remplace proprement 'use_container_width=True'
+                        )
+                    except Exception:
+                        # Si l'image est corrompue ou en cours d'écriture, on ignore temporairement sans planter
+                        pass
 
         else:
             st.warning("No results folder found")
@@ -524,7 +525,12 @@ for i in range(1, num_clients + 1):
 st.write("")
 st.markdown("---")
 
-
+# =========================================================
+# 5. LE MOTEUR DU TEMPS REEL (TOUT EN BAS DU CODE)
+# =========================================================
+if st.session_state.training_active:
+    time.sleep(2)  # Attendre 2 secondes avant de rafraîchir
+    st.rerun()     # Réexécute le script pour mettre à jour les logs et graphes
 # =========================================================
 # FOOTER
 # =========================================================
