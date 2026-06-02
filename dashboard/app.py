@@ -1,10 +1,10 @@
-
 import streamlit as st
 import pandas as pd
 import requests
 import os
 import json
 import time
+
 # =========================================================
 # PAGE CONFIG
 # =========================================================
@@ -13,41 +13,32 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
 # =========================================================
 # AUTO-REFRESH CONFIGURATION (TEMPS RÉEL)
 # =========================================================
-# Si l'entraînement est actif, on force la page à se recharger toutes les 2 secondes
 if "training_active" not in st.session_state:
     st.session_state.training_active = False
 
-# =========================================================
-# CUSTOM CSS (ULTRA MODERN UI)
-# =========================================================
 st.markdown("""
 <style>
 
-/* Force les variables globales de Streamlit à utiliser du blanc par défaut */
 :root {
-    --text-color: #ffffff !important;
-    --primary-color: #2563eb !important;
+    --text-color: #334155 !important; /* Anthracite doux */
+    --primary-color: #f97316 !important; /* Orange chaud */
+    --background-color: #fdfbfc !important; /* Blanc crème anti-fatigue */
 }
 
 html, body, [class*="css"] {
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
 }
 
-/* Main Background */
+/* Fond d'application adouci (Blanc chaud / Crème) */
 .stApp {
-    background: linear-gradient(
-        135deg,
-        #0f172a 0%,
-        #111827 30%,
-        #1e293b 100%
-    );
-    color: #ffffff !important;
+    background: linear-gradient(135deg, #fdfbfc 0%, #fbf7f4 50%, #f7f0ea 100%);
+    color: #334155 !important;
 }
 
-/* Main container */
 .block-container {
     padding-top: 2rem;
     padding-bottom: 2rem;
@@ -55,180 +46,168 @@ html, body, [class*="css"] {
     padding-right: 3rem;
 }
 
-/* Titles */
+/* Titres avec dégradé harmonieux (Jaune Ambré -> Orange -> Rouge Brique) */
 .main-title {
-    font-size: 3rem;
+    font-size: 3.3rem;
     font-weight: 800;
-    color: white;
+    background: linear-gradient(135deg, #eab308 0%, #f97316 50%, #dc2626 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
     margin-bottom: 0.2rem;
+    letter-spacing: -1px;
 }
 
 .sub-title {
-    color: #94a3b8;
-    font-size: 1.1rem;
+    color: #64748b;
+    font-size: 1.05rem;
     margin-bottom: 2rem;
+    font-weight: 500;
 }
 
-/* Cards */
+/* Cartes Premium Smooth (Fond crème opalescent) */
 .custom-card {
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 22px;
+    background: rgba(253, 251, 252, 0.85);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(249, 115, 22, 0.12);
+    border-radius: 24px;
     padding: 25px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    box-shadow: 0 15px 35px rgba(249, 115, 22, 0.03), 0 1px 2px rgba(0,0,0,0.01);
 }
 
-/* Buttons */
+/* Boutons retravaillés pour éviter l'effet "flash" */
 .stButton > button {
     width: 100%;
-    height: 55px;
-    border-radius: 16px;
+    height: 52px;
+    border-radius: 14px;
     border: none;
     font-weight: 700;
     font-size: 15px;
-    transition: 0.3s ease;
-    background: linear-gradient(
-        90deg,
-        #2563eb,
-        #7c3aed
-    );
-    color: white;
-    box-shadow: 0 8px 20px rgba(59,130,246,0.3);
+    letter-spacing: 0.3px;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.stButton > button:hover {
+/* Bouton START (Chaleureux mais tamisé) */
+div[data-testid="stHorizontalBlock"] div:nth-child(1) .stButton > button {
+    background: linear-gradient(90deg, #eab308 0%, #f97316 100%);
+    color: #ffffff !important;
+    box-shadow: 0 8px 20px rgba(249, 115, 22, 0.2);
+}
+
+div[data-testid="stHorizontalBlock"] div:nth-child(1) .stButton > button:hover {
     transform: translateY(-2px);
-    background: linear-gradient(
-        90deg,
-        #3b82f6,
-        #8b5cf6
-    );
+    box-shadow: 0 12px 25px rgba(249, 115, 22, 0.3);
+    filter: brightness(1.05);
 }
 
-/* =========================================================
-   BLOC METRICS CORRIGÉ (Rows, Columns, Accuracy, F1...) 
-   ========================================================= */
+/* Bouton STOP (Épuré, rouge brique discret) */
+div[data-testid="stHorizontalBlock"] div:nth-child(2) .stButton > button {
+    background: #fff5f5;
+    color: #dc2626 !important;
+    border: 1.5px solid #fecaca;
+}
 
+div[data-testid="stHorizontalBlock"] div:nth-child(2) .stButton > button:hover {
+    transform: translateY(-2px);
+    background: #fef2f2;
+    border-color: #fca5a5;
+    box-shadow: 0 8px 15px rgba(220, 38, 38, 0.08);
+}
+
+/* Fallback Metric Container */
 [data-testid="metric-container"] {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(253, 251, 252, 0.9);
+    border: 1px solid rgba(249, 115, 22, 0.1);
     padding: 20px;
     border-radius: 18px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.01);
 }
 
-/* Petits titres en haut des metrics (ex: Rows, Columns, Accuracy) -> Gris clair argenté */
-[data-testid="metric-container"] label, 
-[data-testid="metric-container"] [data-testid="stMetricLabel"],
-[data-testid="metric-container"] [data-testid="stMetricLabel"] > div,
-[data-testid="metric-container"] [data-testid="stMetricLabel"] p {
-    color: #cbd5e1 !important;
-    font-weight: 500 !important;
+/* Zone de Logs (Style "Warm Dark" pour reposer les yeux) */
+.stTextArea textarea {
+    border-radius: 14px !important;
+    border: 1px solid #e2e8f0 !important;
+    background-color: #1e293b !important; /* Fond sombre pour les logs = confort */
+    color: #f8fafc !important;
+    font-family: 'Fira Code', monospace;
+    font-size: 13px;
+    padding: 15px;
 }
 
-/* Grands chiffres et valeurs (ex: 735, 10, 0.685) -> Blanc pur */
-[data-testid="metric-container"] [data-testid="stMetricValue"], 
-[data-testid="metric-container"] [data-testid="stMetricValue"] > div,
-[data-testid="metric-container"] [data-testid="stMetricValue"] div {
-    color: #ffffff !important;
-    font-weight: 700 !important;
-    -webkit-text-fill-color: #ffffff !important; /* Force le rendu webkit */
-}
-
-/* Titre "Server logs" -> Blanc pur */
-[data-testid="stTextArea"] label, 
-[data-testid="stTextArea"] label p,
-.stTextArea label p {
-    color: #ffffff !important;
+[data-testid="stTextArea"] label p {
+    color: #334155 !important;
     font-weight: 600 !important;
 }
 
 /* =========================================================
-   BLOC SIDEBAR
+   BLOC SIDEBAR - Crème Soft
    ========================================================= */
 
 section[data-testid="stSidebar"] {
-    background: #0b1120 !important;
-    border-right: 1px solid rgba(255,255,255,0.08);
+    background: #ffedd5 !important;
+    border-right: 1px solid #edf2f7;
 }
 
-/* Titre "⚙️ Configuration" -> Blanc pur */
-section[data-testid="stSidebar"] h2, 
-section[data-testid="stSidebar"] h2 div,
-section[data-testid="stSidebar"] h1 {
-    color: #ffffff !important;
-    font-size: 1.6rem !important;
-    font-weight: 700 !important;
+section[data-testid="stSidebar"] h1,
+section[data-testid="stSidebar"] h2 {
+    color: #0f172a !important;
+    font-size: 1.4rem !important;
+    font-weight: 800 !important;
 }
 
-/* Textes au-dessus des menus déroulants -> Gris clair */
-section[data-testid="stSidebar"] label,
 section[data-testid="stSidebar"] label p {
-    color: #cbd5e1 !important;
+    color: #475569 !important;
     font-weight: 600 !important;
-    font-size: 14px !important;
+    font-size: 13px !important;
 }
 
-/* Flèches et icône de réduction de la Sidebar -> Blanc pur */
-section[data-testid="stSidebar"] svg,
-[data-testid="stSidebarCollapseButton"] svg {
-    fill: #ffffff !important;
-    color: #ffffff !important;
-}
-
-/* Selectbox (Champs de sélection) */
+/* Dropdowns élégants */
 .stSelectbox > div > div {
-    background-color: #111827;
-    color: white;
+    background-color: #ffffff !important;
+    color: #334155 !important;
+    border: 1px solid #e2e8f0 !important;
     border-radius: 12px;
 }
 .stSelectbox svg {
-    fill: #ffffff !important;
+    fill: #f97316 !important;
 }              
 
-/* Expander */
+/* Accordéons / Expanders */
 .streamlit-expanderHeader {
-    font-size: 18px;
-    font-weight: bold;
-    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    color: #334155;
+    background-color: #fbf7f4;
+    border: 1px solid #eef2f6;
+    border-radius: 12px;
 }
 
-/* Tables */
+/* DataFrames */
 [data-testid="stDataFrame"] {
-    border-radius: 18px;
+    border-radius: 16px;
     overflow: hidden;
+    border: 1px solid #eef2f6;
 }
 
-/* Section titles */
 .section-title {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     font-weight: 700;
     margin-bottom: 1rem;
-    color: white;
+    color: #0f172a;
+    letter-spacing: -0.3px;
 }
 
-/* Divider */
 hr {
-    border-color: rgba(255,255,255,0.1);
+    border-color: #eef2f6;
 }
 
-/* Success box */
-.success-box {
-    background: rgba(16,185,129,0.15);
-    border: 1px solid rgba(16,185,129,0.4);
-    padding: 15px;
-    border-radius: 15px;
-    color: #6ee7b7;
-}
-
-/* Glow effect */
+/* Effet Glow adouci */
 .glow {
-    box-shadow: 0 0 25px rgba(124,58,237,0.45);
+    box-shadow: 0 0 30px rgba(249, 115, 22, 0.08);
 }
 
 </style>
 """, unsafe_allow_html=True)
+
 
 # =========================================================
 # HEADER
@@ -241,8 +220,8 @@ st.markdown(
         </div>
 
         <div class="sub-title">
-            Modern orchestration platform for Federated Learning,
-            dataset management, client monitoring and real-time metrics visualization.
+            A real-time dashboard for orchestrating, monitoring,
+            and visualizing Federated Learning training across distributed clients.
         </div>
     </div>
     """,
@@ -258,7 +237,7 @@ st.sidebar.markdown("# ⚙️ Configuration")
 
 num_clients = st.sidebar.selectbox(
     "👥 Number of Clients",
-    [2, 3, 4, 5]
+    [2, 3, 5]
 )
 
 k_value = st.sidebar.selectbox(
@@ -275,7 +254,6 @@ split_choice = st.sidebar.selectbox(
 )
 
 if split_choice == "500 / 235":
-
     dataset_choice = st.sidebar.selectbox(
         "📂 Dataset For Clients",
         [
@@ -283,9 +261,7 @@ if split_choice == "500 / 235":
             "235_Data.csv"
         ]
     )
-
 else:
-
     dataset_choice = st.sidebar.selectbox(
         "📂 Dataset For Clients",
         [
@@ -297,9 +273,6 @@ else:
 model_choice = st.sidebar.selectbox(
     "🤖 Pretrained Model",
     [
-        "random_forest_model_tcga+emtab235.pkl",
-        "random_forest_model_tcga+emtab367.pkl",
-        "random_forest_model_tcga+emtab500.pkl",
         "random2_forest_model_tcga+emtab500.pkl",
         "random2_forest_model_tcga+emtab367.pkl",
         "random2_forest_model_tcga+emtab235.pkl"
@@ -307,13 +280,12 @@ model_choice = st.sidebar.selectbox(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.success("System Ready")
 
-# Changement d'état visuel de la sidebar en direct
 if st.session_state.training_active:
     st.sidebar.warning("🔄 Training in progress...")
 else:
     st.sidebar.success("System Ready")
+
 # =========================================================
 # DATASET PREVIEW
 # =========================================================
@@ -325,34 +297,52 @@ st.markdown(
 dataset_path = "data/735_Data.csv"
 
 if os.path.exists(dataset_path):
-
     df = pd.read_csv(dataset_path)
-
     c1, c2, c3 = st.columns(3)
 
-    # --- FONCTION LOCALE POUR GENERER LE METRIC EN BLANC PUR ---
+    # --- FONCTION LOCALE : METRICS ADOUCIES ANTI-FATIGUE ---
     def custom_white_metric(col, label, value):
         col.markdown(f"""
             <div style="
-                background: rgba(255,255,255,0.05);
-                border: 1px solid rgba(255,255,255,0.08);
-                padding: 15px;
-                border-radius: 14px;
-                text-align: left;
+                background: linear-gradient(135deg, #dc2626 0%, #f97316 50%, #facc15 100%);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                padding: 24px;
+                border-radius: 20px;
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                box-shadow: 0 10px 25px rgba(249, 115, 22, 0.35);
+                height: 140px;
             ">
-                <div style="color: #cbd5e1; font-size: 14px; font-weight: 500; margin-bottom: 5px;">{label}</div>
-                <div style="color: #ffffff; font-size: 28px; font-weight: 700;">{value}</div>
+                <div style="
+                    color: rgba(255, 255, 255, 0.85); 
+                    font-size: 13px; 
+                    font-weight: 700; 
+                    text-transform: uppercase; 
+                    letter-spacing: 1px; 
+                    margin-bottom: 8px;
+                ">
+                    {label}
+                </div>
+                <div style="
+                    color: #ffffff; 
+                    font-size: 42px; 
+                    font-weight: 900;
+                    line-height: 1;
+                ">
+                    {value}
+                </div>
             </div>
         """, unsafe_allow_html=True)
 
-    # Application de la fonction sur tes 3 colonnes de Preview
     custom_white_metric(c1, "Rows", len(df))
     custom_white_metric(c2, "Columns", len(df.columns))
     custom_white_metric(c3, "Clients", num_clients)
 
-    st.write("") # Petit espace visuel entre les metrics et le tableau
+    st.write("") 
     st.dataframe(df.head(), use_container_width=True)
-
 else:
     st.error("Dataset not found")
 
@@ -378,7 +368,6 @@ with control4:
                 }
             )
             if response.status_code == 200:
-                # Ajout de l'activation du temps réel
                 st.session_state.training_active = True
                 st.success("Federated Learning started")
                 st.rerun()
@@ -391,13 +380,11 @@ with control5:
     if st.button("🛑 STOP TRAINING"):
         try:
             response = requests.post("http://127.0.0.1:8000/stop_fl")
-            # Désactivation immédiate au clic
             st.session_state.training_active = False
             st.warning("Training stopped")
             st.rerun()
         except Exception as e:
             st.error(f"Stop failed: {e}")
-
 
 # =========================================================
 # GLOBAL METRICS
@@ -416,34 +403,31 @@ if os.path.exists(metrics_path):
 
         if content:
             data = json.loads(content)
-
             m1, m2, m3, m4, m5 = st.columns(5)
 
-            # --- FONCTION LOCALE POUR GENERER LE METRIC EN BLANC PUR ---
             def custom_white_metric(col, label, value):
                 col.markdown(f"""
                     <div style="
-                        background: rgba(255,255,255,0.05);
-                        border: 1px solid rgba(255,255,255,0.08);
-                        padding: 15px;
-                        border-radius: 14px;
-                        text-align: left;
-                    ">
-                        <div style="color: #cbd5e1; font-size: 14px; font-weight: 500; margin-bottom: 5px;">{label}</div>
-                        <div style="color: #ffffff; font-size: 28px; font-weight: 700;">{value}</div>
-                    </div>
+    background: white;
+    border: 2px solid black;
+    padding: 18px;
+    border-radius: 16px;
+    text-align: left;
+    box-shadow: 0 10px 25px rgba(179, 82, 19, 0.45);
+">
+    <div style="text-align: center;">
+    <div style="color: #475569; font-size: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">{label}</div>
+    <div style="background: linear-gradient(135deg, #f97316 0%, #dc2626 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 30px; font-weight: 800; display: inline-block;">{value}</div>
+</div></div>
                 """, unsafe_allow_html=True)
 
-            # Affichage forcé en blanc pur dans chaque colonne
             custom_white_metric(m1, "Accuracy", round(data.get("accuracy", 0), 3))
             custom_white_metric(m2, "F1-score", round(data.get("f1", 0), 3))
             custom_white_metric(m3, "Precision", round(data.get("precision", 0), 3))
             custom_white_metric(m4, "Sensitivity", round(data.get("sensitivity", 0), 3))
             custom_white_metric(m5, "AUC", round(data.get("auc", 0), 3))
-
         else:
             st.info("Waiting for metrics...")
-
     except Exception as e:
         st.error(f"Metrics Error: {e}")
 else:
@@ -451,7 +435,6 @@ else:
 
 st.write("")
 st.markdown("---")
-
 
 # =========================================================
 # SERVER LOGS
@@ -469,12 +452,10 @@ if os.path.exists(log_path):
         height=300
     )
     
-    # Sécurité : Coupe l'auto-refresh automatiquement si ces mots-clés apparaissent
     if "TRAINING FINISHED" in logs or "ERROR:" in logs:
         st.session_state.training_active = False
 else:
     st.info("No logs yet")
-
 
 # =========================================================
 # CLIENT RESULTS
@@ -484,64 +465,54 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-from PIL import Image  # Ajout requis pour la vérification de sécurité
+from PIL import Image
 
 for i in range(1, num_clients + 1):
-
     with st.expander(f"📊 Client {i} Results"):
-
         result_folder = f"results/client{i}"
 
         if os.path.exists(result_folder):
-
             files = os.listdir(result_folder)
             images = [f for f in files if f.endswith(".png")]
 
             if len(images) == 0:
                 st.info("No graphs generated yet")
-
             else:
                 cols = st.columns(2)
-
                 for idx, img in enumerate(images):
                     img_path = f"{result_folder}/{img}"
-                    
                     try:
-                        # SÉCURITÉ : On vérifie si l'image est valide et totalement écrite sur le disque
                         with Image.open(img_path) as v_img:
                             v_img.verify() 
                         
-                        # Si elle est valide, on l'affiche avec la nouvelle syntaxe demandée par Streamlit
                         cols[idx % 2].image(
                             img_path,
                             caption=img,
-                            width="stretch"  # Remplace proprement 'use_container_width=True'
+                            width="stretch"
                         )
                     except Exception:
-                        # Si l'image est corrompue ou en cours d'écriture, on ignore temporairement sans planter
                         pass
-
         else:
             st.warning("No results folder found")
-
 
 st.write("")
 st.markdown("---")
 
 # =========================================================
-# 5. LE MOTEUR DU TEMPS REEL (TOUT EN BAS DU CODE)
+# ENGINE REFRESH
 # =========================================================
 if st.session_state.training_active:
-    time.sleep(2)  # Attendre 2 secondes avant de rafraîchir
-    st.rerun()     # Réexécute le script pour mettre à jour les logs et graphes
+    time.sleep(2)
+    st.rerun()
+
 # =========================================================
 # FOOTER
 # =========================================================
 st.markdown(
     """
     <center>
-        <span style='color:#94a3b8'>
-            🚀 FL Dashboard • Real-Time Federated Learning Monitoring System
+        <span style='color:#94a3b8; font-size: 13px;'>
+             FL Dashboard • Real-Time Federated Learning Monitoring System
         </span>
     </center>
     """,
