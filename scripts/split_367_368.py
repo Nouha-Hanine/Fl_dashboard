@@ -71,27 +71,6 @@ if __name__ == "__main__":
         split3_25.to_csv(os.path.join(output_dir, 'client3.csv'), index=False)
         print("Saved 3-way split files.")
 
-    # ==========================================
-    # CONFIGURATION 3: 4 Parts (30%, 20%, 15%, 35%)
-    # ==========================================
-    elif num_clients == 4:
-        split4_30 = df_shuffled.iloc[:110]
-        split4_20 = df_shuffled.iloc[110:184]  # 110 + 74 = 184
-        split4_15 = df_shuffled.iloc[184:239]  # 184 + 55 = 239
-        split4_35 = df_shuffled.iloc[239:]     # Remaining 129 rows
-
-        # Sauvegarde 
-        split4_30.to_csv('config4_30_368.csv', index=False)
-        split4_20.to_csv('config4_20_368.csv', index=False)
-        split4_15.to_csv('config4_15_368.csv', index=False)
-        split4_35.to_csv('config4_35_368.csv', index=False)
-        
-        # Envoi direct à l'orchestrator pour FastAPI
-        split4_30.to_csv(os.path.join(output_dir, 'client1.csv'), index=False)
-        split4_20.to_csv(os.path.join(output_dir, 'client2.csv'), index=False)
-        split4_15.to_csv(os.path.join(output_dir, 'client3.csv'), index=False)
-        split4_35.to_csv(os.path.join(output_dir, 'client4.csv'), index=False)
-        print("Saved 4-way split files.")
 
     # ==========================================
     # CONFIGURATION 4: 5 Parts (20%, 30%, 15%, 25%, 10%)
