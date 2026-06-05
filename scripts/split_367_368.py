@@ -3,9 +3,9 @@ import sys
 import os
 
 if __name__ == "__main__":
-    # 0. Récupération des variables envoyées par le bouton de ton FastAPI
+    
     num_clients = int(sys.argv[1])
-    dataset_path = sys.argv[2]  # Reçoit "data/735_Data.csv" depuis FastAPI
+    dataset_path = sys.argv[2]  
 
     output_dir = "orchestrator/client_data"
     os.makedirs(output_dir, exist_ok=True)
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     # =========================================================
     # ÉTAPE 2 : DEUXIÈME SHUFFLE ET SÉPARATION CLIENTS (368 LIGNES)
     # =========================================================
-    # 1. Load the dataset (on reprend le fichier fraîchement créé)
+    # 1. Load the dataset 
     df_368_loaded = pd.read_csv('368_Data.csv')
 
     # 2. Remix (shuffle) the data before splitting
@@ -43,7 +43,7 @@ if __name__ == "__main__":
         split2_40 = df_shuffled.iloc[:147]
         split2_60 = df_shuffled.iloc[147:]
 
-        # Sauvegarde pour tes archives locales
+        
         split2_40.to_csv('config2_40_368.csv', index=False)
         split2_60.to_csv('config2_60_368.csv', index=False)
         
@@ -60,7 +60,7 @@ if __name__ == "__main__":
         split3_45 = df_shuffled.iloc[110:276]  # 110 + 166 = 276
         split3_25 = df_shuffled.iloc[276:]
 
-        # Sauvegarde pour tes archives locales
+        # Sauvegarde 
         split3_30.to_csv('config3_30_368.csv', index=False)
         split3_45.to_csv('config3_45_368.csv', index=False)
         split3_25.to_csv('config3_25_368.csv', index=False)
@@ -80,7 +80,7 @@ if __name__ == "__main__":
         split4_15 = df_shuffled.iloc[184:239]  # 184 + 55 = 239
         split4_35 = df_shuffled.iloc[239:]     # Remaining 129 rows
 
-        # Sauvegarde pour tes archives locales
+        # Sauvegarde 
         split4_30.to_csv('config4_30_368.csv', index=False)
         split4_20.to_csv('config4_20_368.csv', index=False)
         split4_15.to_csv('config4_15_368.csv', index=False)
@@ -103,7 +103,7 @@ if __name__ == "__main__":
         split5_368_25 = df_shuffled.iloc[239:331]
         split5_368_10 = df_shuffled.iloc[331:]
 
-        # Sauvegarde pour tes archives locales
+        # Sauvegarde 
         split5_368_20.to_csv('config5_368_20.csv', index=False)
         split5_368_30.to_csv('config5_368_30.csv', index=False)
         split5_368_15.to_csv('config5_368_15.csv', index=False)

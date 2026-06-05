@@ -5,18 +5,14 @@ import os
 import json
 import time
 
-# =========================================================
-# PAGE CONFIG
-# =========================================================
 st.set_page_config(
     page_title="FL Dashboard ",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# =========================================================
+
 # AUTO-REFRESH CONFIGURATION (TEMPS RÉEL)
-# =========================================================
 if "training_active" not in st.session_state:
     st.session_state.training_active = False
 
@@ -24,16 +20,15 @@ st.markdown("""
 <style>
 
 :root {
-    --text-color: #334155 !important; /* Anthracite doux */
-    --primary-color: #f97316 !important; /* Orange chaud */
-    --background-color: #fdfbfc !important; /* Blanc crème anti-fatigue */
+    --text-color: #334155 !important; 
+    --primary-color: #f97316 !important; 
+    --background-color: #fdfbfc !important; 
 }
 
 html, body, [class*="css"] {
     font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
 }
 
-/* Fond d'application adouci (Blanc chaud / Crème) */
 .stApp {
     background: linear-gradient(135deg, #fdfbfc 0%, #fbf7f4 50%, #f7f0ea 100%);
     color: #334155 !important;
@@ -46,7 +41,7 @@ html, body, [class*="css"] {
     padding-right: 3rem;
 }
 
-/* Titres avec dégradé harmonieux (Jaune Ambré -> Orange -> Rouge Brique) */
+
 .main-title {
     font-size: 3.3rem;
     font-weight: 800;
@@ -64,7 +59,7 @@ html, body, [class*="css"] {
     font-weight: 500;
 }
 
-/* Cartes Premium Smooth (Fond crème opalescent) */
+
 .custom-card {
     background: rgba(253, 251, 252, 0.85);
     backdrop-filter: blur(16px);
@@ -74,7 +69,7 @@ html, body, [class*="css"] {
     box-shadow: 0 15px 35px rgba(249, 115, 22, 0.03), 0 1px 2px rgba(0,0,0,0.01);
 }
 
-/* Boutons retravaillés pour éviter l'effet "flash" */
+
 .stButton > button {
     width: 100%;
     height: 52px;
@@ -86,7 +81,7 @@ html, body, [class*="css"] {
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Bouton START (Chaleureux mais tamisé) */
+
 div[data-testid="stHorizontalBlock"] div:nth-child(1) .stButton > button {
     background: linear-gradient(90deg, #eab308 0%, #f97316 100%);
     color: #ffffff !important;
@@ -99,7 +94,7 @@ div[data-testid="stHorizontalBlock"] div:nth-child(1) .stButton > button:hover {
     filter: brightness(1.05);
 }
 
-/* Bouton STOP (Épuré, rouge brique discret) */
+
 div[data-testid="stHorizontalBlock"] div:nth-child(2) .stButton > button {
     background: #fff5f5;
     color: #dc2626 !important;
@@ -113,7 +108,7 @@ div[data-testid="stHorizontalBlock"] div:nth-child(2) .stButton > button:hover {
     box-shadow: 0 8px 15px rgba(220, 38, 38, 0.08);
 }
 
-/* Fallback Metric Container */
+
 [data-testid="metric-container"] {
     background: rgba(253, 251, 252, 0.9);
     border: 1px solid rgba(249, 115, 22, 0.1);
@@ -122,11 +117,11 @@ div[data-testid="stHorizontalBlock"] div:nth-child(2) .stButton > button:hover {
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.01);
 }
 
-/* Zone de Logs (Style "Warm Dark" pour reposer les yeux) */
+
 .stTextArea textarea {
     border-radius: 14px !important;
     border: 1px solid #e2e8f0 !important;
-    background-color: #1e293b !important; /* Fond sombre pour les logs = confort */
+    background-color: #1e293b !important; 
     color: #f8fafc !important;
     font-family: 'Fira Code', monospace;
     font-size: 13px;
@@ -138,9 +133,9 @@ div[data-testid="stHorizontalBlock"] div:nth-child(2) .stButton > button:hover {
     font-weight: 600 !important;
 }
 
-/* =========================================================
-   BLOC SIDEBAR - Crème Soft
-   ========================================================= */
+
+/*BLOC SIDEBAR*/ 
+  
 
 section[data-testid="stSidebar"] {
     background: #ffedd5 !important;
@@ -160,7 +155,7 @@ section[data-testid="stSidebar"] label p {
     font-size: 13px !important;
 }
 
-/* Dropdowns élégants */
+
 .stSelectbox > div > div {
     background-color: #ffffff !important;
     color: #334155 !important;
@@ -171,7 +166,7 @@ section[data-testid="stSidebar"] label p {
     fill: #f97316 !important;
 }              
 
-/* Accordéons / Expanders */
+
 .streamlit-expanderHeader {
     font-size: 15px;
     font-weight: 600;
@@ -200,7 +195,7 @@ hr {
     border-color: #eef2f6;
 }
 
-/* Effet Glow adouci */
+
 .glow {
     box-shadow: 0 0 30px rgba(249, 115, 22, 0.08);
 }
@@ -300,7 +295,7 @@ if os.path.exists(dataset_path):
     df = pd.read_csv(dataset_path)
     c1, c2, c3 = st.columns(3)
 
-    # --- FONCTION LOCALE : METRICS ADOUCIES ANTI-FATIGUE ---
+    
     def custom_white_metric(col, label, value):
         col.markdown(f"""
             <div style="

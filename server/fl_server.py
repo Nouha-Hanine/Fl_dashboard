@@ -18,15 +18,15 @@ from sklearn.metrics import (
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
-# =========================================================
-# LOG SYSTEM (Correction : Utiliser uniquement les print redirigés par FastAPI)
-# =========================================================
+# ==============
+# LOG SYSTEM 
+# ==============
 def log(msg):
-    print(msg, flush=True) # flush=True force l'écriture immédiate dans le terminal/log
+    print(msg, flush=True) 
 
-# =========================================================
-# LOAD CONFIG (Correction : Gestion d'erreur si le fichier est absent au départ)
-# =========================================================
+# =============
+# LOAD CONFIG 
+# =============
 config_path = os.path.join(os.path.dirname(__file__), "config.json")
 
 if not os.path.exists(config_path):
@@ -251,9 +251,9 @@ if __name__ == "__main__":
 
     except Exception as e:
         log(f"ERROR: {e}")
-    # =========================================================
-    # AJOUT : SAUVEGARDE DU MODÈLE GLOBAL FINAL
-    # =========================================================
+    # ========================
+    # save global final model
+    # ========================
     try:
         os.makedirs("models", exist_ok=True)
         final_model_path = "models/global_model_final.pkl"

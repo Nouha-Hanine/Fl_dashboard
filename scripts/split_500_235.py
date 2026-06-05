@@ -3,15 +3,15 @@ import sys
 import os
 
 if __name__ == "__main__":
-    # 0. Récupération des variables envoyées par le bouton de ton FastAPI
+    
     num_clients = int(sys.argv[1])
-    dataset_path = sys.argv[2]  # Reçoit "data/735_Data.csv" depuis FastAPI
+    dataset_path = sys.argv[2]  
     target_block = sys.argv[3]
     output_dir = "orchestrator/client_data"
     os.makedirs(output_dir, exist_ok=True)
 
     # =========================================================
-    # ÉTAPE 1 : DIVISION DU FICHIER GLOBAL DE 735 LIGNES (RS=10)
+    # ÉTAPE 1 : DIVISION DU FICHIER GLOBAL DE 735 LIGNES 
     # =========================================================
     df_735 = pd.read_csv(dataset_path)
     df_735_shuffled = df_735.sample(frac=1, random_state=10).reset_index(drop=True)
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     df_500_block = df_735_shuffled.iloc[:500].reset_index(drop=True)
     df_235_block = df_735_shuffled.iloc[500:].reset_index(drop=True)
 
-    # Save the resulting dataframes to new CSV files à la racine
+    # Save the resulting dataframes to new CSV files 
     df_500_block.to_csv('500_Data.csv', index=False)
     df_235_block.to_csv('235_Data.csv', index=False)
 

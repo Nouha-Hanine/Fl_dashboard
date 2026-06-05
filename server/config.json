@@ -1,6 +1,6 @@
 {
     "model": "models/random2_forest_model_tcga+emtab235.pkl",
-    "k": 10,
+    "k": 3,
     "clients": 5,
     "dataset": "500_Data.csv",
     "split_strategy": "500 / 235"

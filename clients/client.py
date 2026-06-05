@@ -31,18 +31,18 @@ CLIENT_ID = sys.argv[1]
 print(f"\n[CLIENT {CLIENT_ID}] Starting...")
 
 
-# =====================================================
-# LOAD DATA (MODIFIÉ ET SÉCURISÉ ICI)
-# =====================================================
+# ============
+# LOAD DATA 
+# ============
 def get_data():
     try:
         dataset_path = f"orchestrator/client_data/client{CLIENT_ID}.csv"
         print(f"[CLIENT {CLIENT_ID}] Loading: {dataset_path}")
 
-        # MODIFICATION: Automatic separator detection (, or ;) + Python engine
+        
         df = pd.read_csv(dataset_path, sep=None, engine="python")
         
-        # MODIFICATION: Remove hidden white spaces from column names
+        
         df.columns = df.columns.str.strip()
 
         target = "Recurrence"
@@ -66,7 +66,7 @@ def get_data():
 
     except Exception as e:
         print(f"[CLIENT {CLIENT_ID}] Error loading data: {e}")
-        # In case of a critical crash, exit cleanly to prevent blocking the Flower server
+        
         sys.exit(1)
 
 
@@ -139,7 +139,7 @@ class FlowerClient(fl.client.NumPyClient):
 
             print(f"[CLIENT {CLIENT_ID}] Generating corrective trees...")
 
-            # FIX IMPORTANT (alignment for numpy comparison)
+            
             y_train_np = self.y_train.values
 
             weights = np.where(
