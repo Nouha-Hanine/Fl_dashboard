@@ -61,23 +61,6 @@ if __name__ == "__main__":
             split3_25.to_csv(os.path.join(output_dir, 'client3.csv'), index=False)
             print("Saved 3-way split files for 235.")
 
-        # --- CONFIGURATION 3: 4 Parts (30%, 20%, 15%, 35%) ---
-        elif num_clients == 4:
-            split4_30 = df_shuffled.iloc[:71]
-            split4_20 = df_shuffled.iloc[71:118]
-            split4_15 = df_shuffled.iloc[118:153]
-            split4_35 = df_shuffled.iloc[153:]
-
-            split4_30.to_csv('config4_235_30.csv', index=False)
-            split4_20.to_csv('config4_235_20.csv', index=False)
-            split4_15.to_csv('config4_235_15.csv', index=False)
-            split4_35.to_csv('config4_235_35.csv', index=False)
-            
-            split4_30.to_csv(os.path.join(output_dir, 'client1.csv'), index=False)
-            split4_20.to_csv(os.path.join(output_dir, 'client2.csv'), index=False)
-            split4_15.to_csv(os.path.join(output_dir, 'client3.csv'), index=False)
-            split4_35.to_csv(os.path.join(output_dir, 'client4.csv'), index=False)
-            print("Saved 4-way split files for 235.")
 
         # --- CONFIGURATION 4: 5 Parts (20%, 30%, 15%, 25%, 10%) ---
         elif num_clients == 5:
@@ -134,23 +117,6 @@ if __name__ == "__main__":
             split3_25.to_csv(os.path.join(output_dir, 'client3.csv'), index=False)
             print("Saved 3-way split files for 500.")
 
-        # --- CONFIGURATION 3: 4 Parts (30%, 20%, 15%, 35%) ---
-        elif num_clients == 4:
-            split4_30 = df_shuffled.iloc[:150]
-            split4_20 = df_shuffled.iloc[150:250]
-            split4_15 = df_shuffled.iloc[250:325]
-            split4_35 = df_shuffled.iloc[325:]
-
-            split4_30.to_csv('config4_500_30.csv', index=False)
-            split4_20.to_csv('config4_500_20.csv', index=False)
-            split4_15.to_csv('config4_500_15.csv', index=False)
-            split4_35.to_csv('config4_500_35.csv', index=False)
-            
-            split4_30.to_csv(os.path.join(output_dir, 'client1.csv'), index=False)
-            split4_20.to_csv(os.path.join(output_dir, 'client2.csv'), index=False)
-            split4_15.to_csv(os.path.join(output_dir, 'client3.csv'), index=False)
-            split4_35.to_csv(os.path.join(output_dir, 'client4.csv'), index=False)
-            print("Saved 4-way split files for 500.")
 
         # --- CONFIGURATION 4: 5 Parts (20%, 30%, 15%, 25%, 10%) ---
         elif num_clients == 5:
